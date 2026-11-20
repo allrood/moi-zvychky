@@ -1448,7 +1448,7 @@ function syncPanelBody(){
     <div class="row" style="margin-top:10px"><button class="btn" data-act="dbxlink">📱 Підключити інший пристрій</button></div>
     ${showLink ? `<div class="syncbox"><b>Код для телефона або іншого комп'ютера</b><ol><li>Скопіюй цей код і перешли його собі на телефон (наприклад, у «Збережене» в Telegram або в нотатки).</li><li>На телефоні відкрий «Звички» з іконки → «Налаштування» → «☁ Синхронізація», встав код у поле «Код з комп'ютера» і натисни «Підключити».</li></ol>
       <textarea class="inp" id="linkCode" rows="3" readonly style="font-family:monospace;font-size:12px;word-break:break-all">${esc(linkCode())}</textarea>
-      <div class="row" style="margin-top:6px"><button class="btn primary" data-act="dbxcopy">Скопіювати код</button><button class="btn plain" data-act="dbxlinkhide">Сховати</button></div>
+      <div class="row" style="margin-top:6px"><button class="btn primary" data-act="dbxcopy">Скопіювати код</button><button class="btn" data-act="dbxcopylink">Скопіювати посилання для телефона</button><button class="btn plain" data-act="dbxlinkhide">Сховати</button></div>
       <div class="hint" style="margin:6px 0 0">Код дає доступ лише до папки «Звичок» у твоєму Dropbox. Не пересилай його іншим людям.</div></div>` : ''}`;
   if (sync.verifier) return `<div class="syncbox"><b>Крок 2 з 2</b><ol><li>У вікні Dropbox натисни «Allow / Дозволити». Якщо вікно не відкрилося, натисни кнопку «Відкрити сторінку Dropbox» нижче.</li><li>Скопіюй код, який покаже Dropbox, і встав сюди.</li></ol>
     <div class="row"><input class="inp" id="dbxCodeInp" placeholder="Код з Dropbox" style="flex:1;min-width:180px"><button class="btn primary" data-act="dbxcode">Підключити</button></div>
@@ -1457,12 +1457,13 @@ function syncPanelBody(){
     ${DBX_APP_KEY ? '' : `<label class="f">App key додатка Dropbox</label><input class="inp" id="dbxKey" value="${esc(sync.appKey || '')}" placeholder="напр. a1b2c3d4e5f6g7h" style="max-width:320px">`}
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="dbxauth">Підключити Dropbox</button></div>
     <div class="syncbox"><b>Уже підключив Dropbox на комп'ютері?</b><div class="hint" style="margin:4px 0 8px">На комп'ютері: «Налаштування» → «☁ Синхронізація» → «📱 Підключити інший пристрій» → «Скопіювати код». Встав його сюди.</div>
-      <div class="row"><input class="inp" id="linkInp" placeholder="Код з комп'ютера (HZ1.…)" style="flex:1;min-width:180px"><button class="btn primary" data-act="dbxjoin">Підключити</button></div></div>`;
+      <div class="row"><input class="inp" id="linkInp" placeholder="Код з комп'ютера (HZ1.…)" style="flex:1;min-width:180px"><button class="btn primary" data-act="dbxjoin">Підключити</button></div>
+      ${navigator.clipboard && navigator.clipboard.readText ? '<div class="row" style="margin-top:6px"><button class="btn" data-act="dbxpaste">📋 Вставити з буфера й підключити</button></div>' : ''}</div>`;
 }
 let showLink = false;
 const linkCode = () => 'HZ1.' + b64url(new TextEncoder().encode(JSON.stringify({k:dbxKey(), r:sync.refresh})));
-function joinByCode(){
-  const raw = ($('#linkInp') ? $('#linkInp').value : '').replace(/\s+/g, '');
+function joinByCode(given){
+  const raw = (typeof given === 'string' ? given : ($('#linkInp') ? $('#linkInp').value : '')).replace(/\s+/g, '');
   try {
     if (!raw.startsWith('HZ1.')) throw 0;
     const b = atob(raw.slice(4).replace(/-/g,'+').replace(/_/g,'/'));
@@ -1610,8 +1611,10 @@ document.addEventListener('click', e => {
     case 'dbxcancel': delete sync.verifier; syncCfgSave(); paintSync(); break;
     case 'dbxsync': syncNow(true); break;
     case 'dbxlink': showLink = true; paintSync(); break;
+    case 'dbxcopylink': { const url = 'https://allrood.github.io/moi-zvychky/#' + linkCode(); (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Посилання скопійовано'), () => toast('Не вдалося скопіювати')); break; }
     case 'dbxlinkhide': showLink = false; paintSync(); break;
     case 'dbxjoin': joinByCode(); break;
+    case 'dbxpaste': navigator.clipboard.readText().then(t => { const m = (t || '').match(/HZ1\.[A-Za-z0-9_-]+/); if (m) joinByCode(m[0]); else toast('У буфері немає коду HZ1.… Скопіюй його ще раз.'); }, () => toast('Не вдалося прочитати буфер, встав код у поле вручну')); break;
     case 'dbxcopy': { const ta = $('#linkCode'); ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(ta.value) : Promise.reject()).then(() => toast('Код скопійовано'), () => { try { document.execCommand('copy'); toast('Код скопійовано'); } catch (e) { toast('Виділи код і скопіюй вручну'); } }); break; }
     case 'dbxoff': if (confirm('Відключити синхронізацію на цьому пристрої? Дані тут і в Dropbox залишаться.')) { sync = {}; syncCfgSave(); try { localStorage.removeItem(SYNC_BASE); } catch (e) {} paintSync(); toast('Синхронізацію вимкнено'); } break;
     case 'pickupd': installUpdate(null); break;
@@ -1640,6 +1643,8 @@ render();
 paintSideFoot();
 checkUpdate(false);
 paintSync(); autoSync(); preparePkce();
+// посилання виду …/#HZ1.… підключає пристрій одразу; код не йде на сервер і прибирається з адреси
+(() => { const m = location.hash.match(/HZ1\.[A-Za-z0-9_-]+/); if (!m) return; history.replaceState(null, '', location.pathname + location.search); if (!sync.refresh) joinByCode(m[0]); })();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
