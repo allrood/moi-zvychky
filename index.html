@@ -1438,6 +1438,9 @@ function mergeState(base, local, remote){
   // сесії помодоро лише додаються — об'єднуємо за id
   const pm = {}; [local, remote].forEach(x => (x && x.pomo || []).forEach(p => { pm[p.id] = pm[p.id] || p; }));
   const pl = Object.values(pm).sort((a, b) => a.s - b.s); if (pl.length) out.pomo = pl;
+  // стан таймера — спільний для всіх пристроїв, перемагає найсвіжіша дія
+  const tm = [local && local.timer, remote && remote.timer].filter(Boolean).sort((a, b) => (b.t || 0) - (a.t || 0))[0];
+  if (tm) out.timer = tm;
   return out;
 }
 
@@ -1589,7 +1592,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.0'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.1'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1769,8 +1772,20 @@ const PMODES = {focus:'Фокус', short:'Коротка перерва', long:
 const pcfg = () => ({...PDEF, ...(state.settings.pomo || {})});
 const pdur = m => Math.max(1, Math.min(180, +pcfg()[m] || PDEF[m])) * 60000;
 let prun = (() => { try { const r = JSON.parse(localStorage.getItem(PRUN_KEY)); if (r && PMODES[r.mode]) return r; } catch (e) {} return null; })()
-  || {mode:'focus', status:'idle', endAt:0, left:0, total:0, startedAt:0, habit:'', done:0};
-function prunSave(){ try { localStorage.setItem(PRUN_KEY, JSON.stringify(prun)); } catch (e) {} }
+  || {mode:'focus', status:'idle', endAt:0, left:0, total:0, startedAt:0, habit:'', done:0, t:0};
+// t — час останньої зміни; дія користувача = зараз, автоматичний перехід = момент закінчення (однаковий на всіх пристроях)
+function prunSave(t){
+  prun.t = t || Date.now();
+  try { localStorage.setItem(PRUN_KEY, JSON.stringify(prun)); } catch (e) {}
+  state.timer = {...prun}; persist(); scheduleSync(t ? 2500 : 300);
+}
+function ptimerAdopt(){ // прийшов новіший стан таймера з іншого пристрою
+  const r = state.timer; if (!r || !PMODES[r.mode] || (r.t || 0) <= (prun.t || 0)) return false;
+  const modeChanged = r.mode !== prun.mode || r.status !== prun.status;
+  prun = {...r}; try { localStorage.setItem(PRUN_KEY, JSON.stringify(prun)); } catch (e) {}
+  if (view === 'pomo' && modeChanged) render(); else ppaint();
+  return true;
+}
 const pleft = () => prun.status === 'run' ? Math.max(0, prun.endAt - Date.now()) : prun.status === 'pause' ? prun.left : pdur(prun.mode);
 const ptotal = () => prun.status === 'idle' ? pdur(prun.mode) : prun.total;
 const pfmt = ms => { const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
@@ -1849,7 +1864,8 @@ function pstart(){
 function ppause(){ if (prun.status !== 'run') return; prun.left = Math.max(0, prun.endAt - Date.now()); prun.status = 'pause'; prunSave(); ppaint(); }
 function plog(min, full){
   if (min < 1) return;
-  psessions().push({id:uid(), s:prun.startedAt, e:Date.now(), m:min, h:prun.habit || '', ...(full ? {} : {p:1})});
+  if (psessions().some(x => x.id === 'f' + prun.startedAt)) return;
+  psessions().push({id:'f' + prun.startedAt, s:prun.startedAt, e:full ? prun.endAt : Date.now(), m:min, h:prun.habit || '', ...(full ? {} : {p:1})});
   if (full && prun.habit && pcfg().mark) { const h = state.habits.find(x => x.id === prun.habit); if (h && h.measure === 'check' && h.type !== 'bad' && !entry(todayKey(), h.id)) setEntry(todayKey(), h.id, 1); }
   save();
 }
@@ -1859,13 +1875,14 @@ function pstop(){ // зупинити й скинути; фокус від 1 х�
 }
 function pmode(m){ if (prun.status !== 'idle' && prun.mode === 'focus' && m !== 'focus') plog(Math.floor((prun.total - pleft()) / 60000), false); prun.mode = m; prun.status = 'idle'; prunSave(); ppaint(); if (view === 'pomo') render(); }
 function pskip(){ if (prun.mode === 'focus') { pstop(); pnext(false); } else pnext(false); }
-function pnext(auto){
+function pnext(auto, at){
   const c = pcfg();
   if (prun.mode === 'focus') { prun.mode = prun.done > 0 && prun.done % c.every === 0 ? 'long' : 'short'; }
   else { if (prun.mode === 'long') prun.done = 0; prun.mode = 'focus'; }
   prun.status = 'idle';
-  if (auto && (prun.mode === 'focus' ? c.autoFocus : c.autoBreak)) { prun.total = pdur(prun.mode); prun.endAt = Date.now() + prun.total; prun.startedAt = Date.now(); prun.status = 'run'; }
-  prunSave(); if (view === 'pomo') render(); else ppaint();
+  const t0 = at || Date.now();
+  if (auto && (prun.mode === 'focus' ? c.autoFocus : c.autoBreak)) { prun.total = pdur(prun.mode); prun.endAt = t0 + prun.total; prun.startedAt = t0; prun.status = 'run'; }
+  prunSave(at); if (view === 'pomo') render(); else ppaint();
 }
 function pcomplete(){
   const wasFocus = prun.mode === 'focus', late = Date.now() - prun.endAt > 60000;
@@ -1874,9 +1891,10 @@ function pcomplete(){
   if (!late) (SOUNDS[c.sound] || SOUNDS.bell).play(!wasFocus);
   pnotify(wasFocus ? 'Помодоро завершено 🍅 Час відпочити.' : 'Перерва закінчилась. До роботи!');
   toast(wasFocus ? '🍅 Помодоро завершено! Час на перерву' : '☕ Перерва закінчилась');
-  pnext(!late);
+  pnext(true, prun.endAt);
 }
 function ptick(){
+  if (ptimerAdopt()) return;
   if (prun.status === 'run' && Date.now() >= prun.endAt) { pcomplete(); return; }
   if (prun.status === 'run' && prun.mode === 'focus' && pcfg().amb === 'tick') { const s = Math.floor(pleft() / 1000); if (s !== lastTickSec) { lastTickSec = s; tickSound(); } }
   ppaint(true);
@@ -1999,6 +2017,8 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.pcfg === 'vol') { state.settings.pomo = {...(state.settings.pomo || {}), vol:+e.target.value}; if (ambNode) ambNode.g.gain.value = 0.5 * pvol(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ptick(); });
 setInterval(ptick, 250);
+// поки таймер іде або відкрита вкладка — частіше звіряємось з іншим пристроєм
+setInterval(() => { if (document.visibilityState === 'visible' && (prun.status !== 'idle' || view === 'pomo') && sync.refresh && !syncBusy) syncNow(false); }, 15000);
 
 render();
 paintSideFoot();
