@@ -234,8 +234,13 @@
   #upd .notes{white-space:pre-line;color:var(--muted);font-size:12px;margin:6px 0 10px;max-height:160px;overflow:auto}
   .updbox{background:#2d3140;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px}
   @media (max-width:1050px){.tiles{grid-template-columns:repeat(2,1fr)}.three{grid-template-columns:1fr}.htable .hr{grid-template-columns:150px 1fr 70px 100px 50px 20px}}
-  .pill.sync{cursor:pointer}
+  .pill.sync{cursor:pointer;border:0;display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+  .pill.sync:hover{background:#454a5a}
   .pill.sync.err{background:#5a2e36;color:#ffb4bf}
+  .pill.sync.ok{background:#1f3b2b;color:#bbf7d0}
+  .pill.sync svg{width:14px;height:14px;fill:currentColor}
+  .pill.sync.busy svg{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
   a.btn{text-decoration:none;display:inline-block;color:var(--text)}
   .syncbox{background:#2d3140;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px}
   .syncbox ol{margin:6px 0 8px 18px;padding:0;color:var(--muted);font-size:12.5px}
@@ -243,7 +248,9 @@
     input,select,textarea{font-size:16px !important}
     .top{height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0}
     .brand{font-size:14px}
-    #todayPill{display:none}
+    #todayPill,#pctPill{display:none}
+    .brand{white-space:nowrap}
+    .pill.sync{padding:7px 12px;font-size:13px}
     .side{top:auto;bottom:0;right:0;width:auto;height:calc(58px + env(safe-area-inset-bottom));padding:4px 4px env(safe-area-inset-bottom);display:flex;gap:2px;border-top:1px solid #22252f;z-index:6}
     .nav{flex-direction:column;gap:3px;font-size:10.5px;padding:6px 2px;margin:0;justify-content:center;text-align:center}
     .nav.active{box-shadow:inset 0 3px 0 var(--accent)}
@@ -292,7 +299,7 @@
 <header class="top">
   <div class="brand"><span class="logo">◎</span>Мої звички</div>
   <div class="spacer"></div>
-  <div class="pill sync" id="syncPill" hidden data-gosync="1"></div>
+  <button class="pill sync" id="syncPill" data-syncbtn="1"></button>
   <div class="pill" id="todayPill"></div>
   <div class="pill" id="pctPill"></div>
 </header>
@@ -1431,7 +1438,6 @@ async function syncNow(manual){
       break;
     }
     sync.last = Date.now(); sync.err = null; sync.status = 'ok';
-    if (manual) toast('Синхронізовано ☁');
   } catch (e) {
     sync.status = 'err'; sync.err = e instanceof TypeError ? 'немає інтернету або Dropbox недоступний' : String(e.message || e);
     if (manual) toast('Синхронізація не вдалася: ' + sync.err);
@@ -1478,10 +1484,12 @@ function joinByCode(given){
 function paintSync(){
   const p = $('#syncPill');
   if (p) {
-    p.hidden = !sync.refresh;
-    p.classList.toggle('err', sync.status === 'err');
-    p.textContent = sync.status === 'busy' ? '☁ …' : sync.status === 'err' ? '☁ ⚠ помилка' : sync.last ? '☁ ' + hhmm(sync.last) : '☁';
-    p.title = sync.status === 'err' ? 'Синхронізація не вдалася: ' + (sync.err || '') : 'Синхронізація з Dropbox';
+    const ico = '<svg viewBox="0 0 512 512"><path d="M105 203a160 160 0 0 1 264-60l-41 41a8 8 0 0 0 6 14h138a8 8 0 0 0 8-8V52a8 8 0 0 0-14-6l-44 44A224 224 0 0 0 44 182a32 32 0 1 0 61 21zm363 106a32 32 0 0 0-41 21 160 160 0 0 1-264 60l41-41a8 8 0 0 0-6-14H60a8 8 0 0 0-8 8v138a8 8 0 0 0 14 6l44-44a224 224 0 0 0 378-92 32 32 0 0 0-20-42z"/></svg>';
+    const st = !sync.refresh ? 'off' : sync.status;
+    p.className = 'pill sync ' + (st === 'busy' ? 'busy' : st === 'err' ? 'err' : (sync.last && Date.now() - sync.last < 4000) ? 'ok' : '');
+    p.innerHTML = ico + '<span>' + (st === 'off' ? 'Синхронізація' : st === 'busy' ? 'Синхронізую…' : st === 'err' ? 'Помилка, ще раз' : sync.last ? (Date.now() - sync.last < 4000 ? 'Готово ✓' : hhmm(sync.last)) : 'Синхронізувати') + '</span>';
+    p.title = st === 'off' ? 'Підключити синхронізацію з Dropbox' : st === 'err' ? 'Синхронізація не вдалася: ' + (sync.err || '') + '. Натисни, щоб спробувати ще раз' : 'Натисни, щоб синхронізувати зараз';
+    clearTimeout(paintSync.t); if (p.classList.contains('ok')) paintSync.t = setTimeout(paintSync, 4100);
   }
   const sp = $('#syncPanel');
   if (sp && !(sp.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) sp.innerHTML = '<h3>☁ Синхронізація через Dropbox</h3>' + syncPanelBody();
@@ -1547,6 +1555,7 @@ document.addEventListener('click', e => {
   const ex = e.target.closest('[data-expand]');
   if (ex && !e.target.closest('button')) { expanded = expanded === ex.dataset.expand ? null : ex.dataset.expand; render(); return; }
   const op = e.target.closest('[data-open]'); if (op) { openDetail(op.dataset.open); return; }
+  if (e.target.closest('[data-syncbtn]')) { if (sync.refresh) { syncNow(true); } else { view = 'settings'; closePop(); render(); const sp = $('#syncPanel'); if (sp) sp.scrollIntoView({block:'center'}); } return; }
   if (e.target.closest('[data-gosync]')) { view = 'settings'; closePop(); render(); const sp = $('#syncPanel'); if (sp) sp.scrollIntoView({block:'center'}); return; }
   if (e.target.closest('[data-act="gosettings"]')) { view = 'settings'; closePop(); render(); return; }
   const b = e.target.closest('button'); if (!b) return;
