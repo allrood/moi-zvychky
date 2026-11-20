@@ -236,6 +236,7 @@
   @media (max-width:1050px){.tiles{grid-template-columns:repeat(2,1fr)}.three{grid-template-columns:1fr}.htable .hr{grid-template-columns:150px 1fr 70px 100px 50px 20px}}
   .pill.sync{cursor:pointer}
   .pill.sync.err{background:#5a2e36;color:#ffb4bf}
+  a.btn{text-decoration:none;display:inline-block;color:var(--text)}
   .syncbox{background:#2d3140;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px}
   .syncbox ol{margin:6px 0 8px 18px;padding:0;color:var(--muted);font-size:12.5px}
   @media (max-width:700px){
@@ -1345,14 +1346,23 @@ function mergeState(base, local, remote){
   return out;
 }
 
-async function dbxStartAuth(){
+// PKCE-пара готується заздалегідь: iPhone відкриває нове вікно лише одразу після натискання, без очікування
+let pkce = null;
+async function preparePkce(){
+  try {
+    const v = b64url(crypto.getRandomValues(new Uint8Array(48)));
+    pkce = {v, ch: b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)))};
+  } catch (e) { pkce = null; }
+}
+function dbxStartAuth(){
   const ki = $('#dbxKey'); if (ki && ki.value.trim()) { sync.appKey = ki.value.trim(); }
   if (!dbxKey()) { toast('Встав App key з Dropbox'); return; }
-  const v = b64url(crypto.getRandomValues(new Uint8Array(48)));
-  const ch = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)));
-  sync.verifier = v; syncCfgSave();
-  window.open(`https://www.dropbox.com/oauth2/authorize?client_id=${encodeURIComponent(dbxKey())}&response_type=code&code_challenge=${ch}&code_challenge_method=S256&token_access_type=offline`, '_blank');
-  paintSync();
+  if (!pkce) { toast('Секунду, готую підключення… Натисни ще раз'); preparePkce(); return; }
+  sync.verifier = pkce.v;
+  sync.authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${encodeURIComponent(dbxKey())}&response_type=code&code_challenge=${pkce.ch}&code_challenge_method=S256&token_access_type=offline`;
+  pkce = null; syncCfgSave();
+  try { window.open(sync.authUrl, '_blank'); } catch (e) {}
+  paintSync(); preparePkce();
 }
 async function dbxFinishAuth(){
   const code = ($('#dbxCodeInp') ? $('#dbxCodeInp').value : '').trim();
@@ -1435,9 +1445,9 @@ function syncPanelBody(){
   if (sync.refresh) return `<div class="cap">Звички й записи зберігаються ще й у твоєму Dropbox (папка «Програми»), тож ПК і телефон бачать одне й те саме. Зміни відправляються одразу, а чужі підтягуються при відкритті програми.</div>
     <div class="row"><span>${sync.status === 'busy' ? '⏳ Синхронізую…' : sync.status === 'err' ? '⚠ Помилка: ' + esc(sync.err || '') : sync.last ? '✓ Остання синхронізація о ' + hhmm(sync.last) : 'Ще не синхронізовано'}</span><div class="spacer"></div>
     <button class="btn primary" data-act="dbxsync">Синхронізувати зараз</button><button class="btn" data-act="dbxoff">Відключити</button></div>`;
-  if (sync.verifier) return `<div class="syncbox"><b>Крок 2 з 2</b><ol><li>У вікні Dropbox, яке відкрилося, натисни «Allow / Дозволити».</li><li>Скопіюй код, який покаже Dropbox, і встав сюди.</li></ol>
+  if (sync.verifier) return `<div class="syncbox"><b>Крок 2 з 2</b><ol><li>У вікні Dropbox натисни «Allow / Дозволити». Якщо вікно не відкрилося, натисни кнопку «Відкрити сторінку Dropbox» нижче.</li><li>Скопіюй код, який покаже Dropbox, і встав сюди.</li></ol>
     <div class="row"><input class="inp" id="dbxCodeInp" placeholder="Код з Dropbox" style="flex:1;min-width:180px"><button class="btn primary" data-act="dbxcode">Підключити</button></div>
-    <div class="row" style="margin-top:6px"><button class="btn plain" data-act="dbxauth">Відкрити сторінку Dropbox ще раз</button><button class="btn plain" data-act="dbxcancel">Скасувати</button></div></div>`;
+    <div class="row" style="margin-top:6px"><a class="btn" href="${esc(sync.authUrl || '#')}" target="_blank" rel="noopener">Відкрити сторінку Dropbox</a><button class="btn plain" data-act="dbxcancel">Скасувати</button></div></div>`;
   return `<div class="cap">Щоб звички були однакові на ПК і на iPhone. Дані лежатимуть у твоєму Dropbox, у папці «Програми». Безкоштовно.</div>
     ${DBX_APP_KEY ? '' : `<label class="f">App key додатка Dropbox</label><input class="inp" id="dbxKey" value="${esc(sync.appKey || '')}" placeholder="напр. a1b2c3d4e5f6g7h" style="max-width:320px">`}
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="dbxauth">Підключити Dropbox</button></div>`;
@@ -1605,7 +1615,7 @@ $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') cl
 render();
 paintSideFoot();
 checkUpdate(false);
-paintSync(); autoSync();
+paintSync(); autoSync(); preparePkce();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
