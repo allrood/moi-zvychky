@@ -244,6 +244,75 @@
   a.btn{text-decoration:none;display:inline-block;color:var(--text)}
   .syncbox{background:#2d3140;border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-top:10px}
   .syncbox ol{margin:6px 0 8px 18px;padding:0;color:var(--muted);font-size:12.5px}
+  /* ---------- Помодоро ---------- */
+  .pill.ptimer{background:#4a2a2e;color:#fecaca;cursor:pointer;border:0;font-variant-numeric:tabular-nums}
+  .pill.ptimer.brk{background:#1f3b2b;color:#bbf7d0}
+  .pill.ptimer.paused{opacity:.7}
+  .pomo{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:14px;align-items:start}
+  .pstage{position:relative;border-radius:16px;overflow:hidden;min-height:600px;display:flex;flex-direction:column;align-items:center;padding:18px 16px 24px;
+    background:radial-gradient(ellipse at 72% 58%,rgba(20,110,80,.38),transparent 55%),radial-gradient(ellipse at 20% 85%,rgba(16,80,70,.30),transparent 50%),radial-gradient(circle at 50% 40%,#1b1f27,#121419 75%)}
+  .pstage.brk{background:radial-gradient(ellipse at 70% 55%,rgba(30,120,170,.35),transparent 55%),radial-gradient(ellipse at 20% 85%,rgba(20,90,120,.28),transparent 50%),radial-gradient(circle at 50% 40%,#1a2029,#111419 75%)}
+  .pmodes{display:flex;gap:4px;background:rgba(255,255,255,.06);border-radius:999px;padding:4px}
+  .pmodes button{border:0;background:none;color:#aab0bf;padding:6px 14px;border-radius:999px;font-weight:600;font-size:12.5px;cursor:pointer}
+  .pmodes button.on{background:rgba(255,255,255,.14);color:#fff}
+  .ptask{margin-top:12px;background:rgba(255,255,255,.07);border:0;border-radius:12px;padding:9px 16px;min-width:260px;max-width:90%;text-align:center;color:#c9cdd8;appearance:none;-webkit-appearance:none;cursor:pointer;text-align-last:center}
+  .ptask option{background:#2c303c;color:var(--text)}
+  .pring{position:relative;width:min(390px,78vw);aspect-ratio:1;margin:18px 0 6px}
+  .pring svg{width:100%;height:100%;display:block}
+  .pring .tk{stroke:#6b6f7a;stroke-width:5;stroke-linecap:round;transition:stroke .3s}
+  .pring .hand{stroke:#ef4444;stroke-width:4;stroke-linecap:round;filter:drop-shadow(0 0 5px rgba(239,68,68,.8))}
+  .pstage.brk .pring .hand{stroke:#38bdf8;filter:drop-shadow(0 0 5px rgba(56,189,248,.8))}
+  .ptime{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+  .ptime b{font-size:clamp(54px,13vw,92px);font-weight:200;letter-spacing:1px;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+  .ptime span{margin-top:8px;color:#aab0bf;font-size:13px;letter-spacing:.5px}
+  .pbtns{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap;justify-content:center}
+  .pbtn{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.75);border-radius:999px;padding:9px 30px;font-weight:700;cursor:pointer;font-size:14.5px}
+  .pbtn:hover{background:rgba(255,255,255,.08)}
+  .pbtn.main{background:#ef4444;border-color:#ef4444}
+  .pbtn.main:hover{background:#f05656}
+  .pstage.brk .pbtn.main{background:#0ea5e9;border-color:#0ea5e9}
+  .pbtn.ghost{border-color:rgba(255,255,255,.3);color:#c9cdd8;padding:9px 18px}
+  .pdots{display:flex;gap:7px;margin-top:16px;align-items:center;color:#8e94a3;font-size:12px}
+  .pdots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-block}
+  .pdots i.on{background:#ef4444}
+  .psnd{position:absolute;top:14px;right:14px;display:flex;gap:6px}
+  .psnd button{background:rgba(255,255,255,.08);border:0;color:#d5d8e0;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:15px}
+  .psnd button.on{background:rgba(239,68,68,.35)}
+  .pside .panel{background:#262a35}
+  .pside h3{display:flex;align-items:center;gap:8px}
+  .pside h3:before{content:"";width:4px;height:12px;border-radius:2px;background:#ef4444}
+  .pbig{font-size:34px;color:#ef4444;font-weight:300;line-height:1.1;margin-top:6px}
+  .pbig small{font-size:13px;color:var(--muted);margin-left:2px}
+  .pstats{display:flex;gap:22px}
+  .plist{margin-top:8px;max-height:230px;overflow:auto}
+  .plist .it{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #323644;font-size:12.5px}
+  .plist .it:last-child{border:0}
+  .plist .it .tm{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .plist .it .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .plist .it .mn{color:#fca5a5;font-weight:600}
+  .pempty{color:var(--muted);text-align:center;padding:18px 0 8px;font-size:12.5px}
+  .ptl{position:relative;height:16px;background:#363a47;border-radius:4px;margin-top:12px;overflow:hidden}
+  .ptl i{position:absolute;top:0;bottom:0;background:#ef4444;border-radius:2px;min-width:2px}
+  .ptl i.part{background:#f59e0b}
+  .ptlx{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:4px}
+  .pweek{display:flex;gap:6px;align-items:flex-end;height:90px;margin-top:12px}
+  .pweek div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;font-size:10.5px;color:var(--muted)}
+  .pweek div b{width:100%;max-width:26px;background:#ef4444;border-radius:4px 4px 2px 2px;min-height:2px;opacity:.85}
+  .pweek div.today b{opacity:1;box-shadow:0 0 0 2px rgba(239,68,68,.35)}
+  .pset{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;font-size:12.5px;margin-top:10px}
+  .pset input[type=number]{width:64px;background:#323644;border:1px solid var(--border);border-radius:6px;padding:4px 6px;text-align:center}
+  .pset select{background:#323644;border:1px solid var(--border);border-radius:6px;padding:4px 6px;max-width:160px}
+  .pset input[type=range]{width:120px;accent-color:#ef4444}
+  .pset input[type=checkbox]{width:17px;height:17px;accent-color:#ef4444}
+  @media (max-width:1050px){.pomo{grid-template-columns:1fr}}
+  @media (max-width:700px){
+    .pstage{min-height:0;padding:14px 10px 18px;border-radius:14px}
+    .pmodes button{padding:6px 10px;font-size:12px}
+    .ptask{min-width:0;width:100%}
+    .pring{width:min(340px,82vw);margin-top:12px}
+    .psnd{position:static;margin-top:12px}
+    .pbtn{padding:10px 26px}
+  }
   @media (max-width:700px){
     input,select,textarea{font-size:16px !important}
     .top{height:calc(48px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0}
@@ -299,6 +368,7 @@
 <header class="top">
   <div class="brand"><span class="logo">◎</span>Мої звички</div>
   <div class="spacer"></div>
+  <button class="pill ptimer hidden" id="pomoPill" title="Відкрити таймер"></button>
   <button class="pill sync" id="syncPill" data-syncbtn="1"></button>
   <div class="pill" id="todayPill"></div>
   <div class="pill" id="pctPill"></div>
@@ -308,6 +378,7 @@
   <button class="nav" data-view="dashboard"><svg viewBox="0 0 16 16"><path d="M1 1h6v6H1zM9 1h6v6H9zM1 9h6v6H1zM9 9h6v6H9z"/></svg>Сьогодні</button>
   <button class="nav" data-view="manage"><svg viewBox="0 0 16 16"><path d="M1 2h2v2H1zM5 2h10v2H5zM1 7h2v2H1zM5 7h10v2H5zM1 12h2v2H1zM5 12h10v2H5z"/></svg>Звички</button>
   <button class="nav" data-view="progress"><svg viewBox="0 0 16 16"><path d="M1 14h14v1.5H1zM2 11l4-4 3 3 5-6 1 1-6 7-3-3-3 3z"/></svg>Прогрес</button>
+  <button class="nav" data-view="pomo"><svg viewBox="0 0 16 16"><path d="M8 3.2a6.1 6.1 0 100 12.2A6.1 6.1 0 008 3.2zm.8 6.6H5.6V8.3h1.7V5.4h1.5z"/><path d="M6 .6h4v1.5H6z"/></svg>Помодоро</button>
   <button class="nav" data-view="settings" id="navSettings"><svg viewBox="0 0 16 16"><path d="M8 5a3 3 0 100 6 3 3 0 000-6zm6.5 2l-1.6-.3-.5-1.2.9-1.4-1.4-1.4-1.4.9-1.2-.5L9 1.5H7l-.3 1.6-1.2.5-1.4-.9-1.4 1.4.9 1.4-.5 1.2L1.5 7v2l1.6.3.5 1.2-.9 1.4 1.4 1.4 1.4-.9 1.2.5.3 1.6h2l.3-1.6 1.2-.5 1.4.9 1.4-1.4-.9-1.4.5-1.2 1.6-.3z"/></svg>Налаштування</button>
   <div class="sidefoot" id="sideFoot"></div>
 </aside>
@@ -834,7 +905,8 @@ function render(){
   $('#todayPill').textContent = `${done}/${due.length} сьогодні`;
   const r = due.length ? Math.round(avg(due.map(h => P(h,t)))) : 0;
   $('#pctPill').innerHTML = `<span class="dot"></span>${r}% виконання`;
-  ({dashboard:renderDashboard, manage:renderManage, progress:renderProgress, settings:renderSettings, habit:renderHabit})[view]();
+  ({dashboard:renderDashboard, manage:renderManage, progress:renderProgress, settings:renderSettings, habit:renderHabit, pomo:renderPomo})[view]();
+  try { ppaint(); } catch (e) {}
   window.scrollTo(0, view === lastView ? window.scrollY : 0); lastView = view;
   if (typeof showUpdPopup === 'function' && updState) showUpdPopup();
 }
@@ -1363,6 +1435,9 @@ function mergeState(base, local, remote){
     const v = pick(nb[id], nl[id], nr[id]); if (!v || !kept[v._h]) return;
     const {_h, ...n} = v; (out.notes[_h] = out.notes[_h] || []).push(n);
   });
+  // сесії помодоро лише додаються — об'єднуємо за id
+  const pm = {}; [local, remote].forEach(x => (x && x.pomo || []).forEach(p => { pm[p.id] = pm[p.id] || p; }));
+  const pl = Object.values(pm).sort((a, b) => a.s - b.s); if (pl.length) out.pomo = pl;
   return out;
 }
 
@@ -1514,7 +1589,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.3.7'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.0'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1686,6 +1761,244 @@ document.addEventListener('keydown', e => {
   }
 });
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
+
+/* ---------- Помодоро ---------- */
+const PDEF = {focus:25, short:5, long:15, every:4, autoBreak:true, autoFocus:false, sound:'bell', amb:'none', vol:70, mark:false};
+const PRUN_KEY = 'habits-pomo-run'; // стан таймера — свій на кожному пристрої
+const PMODES = {focus:'Фокус', short:'Коротка перерва', long:'Довга перерва'};
+const pcfg = () => ({...PDEF, ...(state.settings.pomo || {})});
+const pdur = m => Math.max(1, Math.min(180, +pcfg()[m] || PDEF[m])) * 60000;
+let prun = (() => { try { const r = JSON.parse(localStorage.getItem(PRUN_KEY)); if (r && PMODES[r.mode]) return r; } catch (e) {} return null; })()
+  || {mode:'focus', status:'idle', endAt:0, left:0, total:0, startedAt:0, habit:'', done:0};
+function prunSave(){ try { localStorage.setItem(PRUN_KEY, JSON.stringify(prun)); } catch (e) {} }
+const pleft = () => prun.status === 'run' ? Math.max(0, prun.endAt - Date.now()) : prun.status === 'pause' ? prun.left : pdur(prun.mode);
+const ptotal = () => prun.status === 'idle' ? pdur(prun.mode) : prun.total;
+const pfmt = ms => { const s = Math.ceil(ms / 1000); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+const psessions = () => state.pomo || (state.pomo = []);
+
+/* звук: усе синтезується через Web Audio, без файлів */
+let actx = null, ambNode = null, ambKind = null;
+function audio(){
+  try { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume(); } catch (e) { actx = null; }
+  return actx;
+}
+const pvol = () => Math.max(0, Math.min(100, +pcfg().vol)) / 100;
+function tone(f, t0, len, type = 'sine', g = 0.5){
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), v = a.createGain(); o.type = type; o.frequency.value = f;
+  v.gain.setValueAtTime(0.0001, t0); v.gain.exponentialRampToValueAtTime(Math.max(0.0002, g * pvol()), t0 + 0.012);
+  v.gain.exponentialRampToValueAtTime(0.0001, t0 + len);
+  o.connect(v).connect(a.destination); o.start(t0); o.stop(t0 + len + 0.05);
+}
+function bell(f, t0, g = 0.45){ tone(f, t0, 2.2, 'sine', g); tone(f * 2.76, t0, 0.9, 'sine', g * 0.25); tone(f * 5.4, t0, 0.35, 'sine', g * 0.1); }
+const SOUNDS = {
+  bell: {name:'Дзвіночок', play: (brk) => { const a = audio(); if (!a) return; const t = a.currentTime + 0.05; (brk ? [784, 1046] : [880, 880, 1174]).forEach((f, i) => bell(f, t + i * 0.55)); }},
+  bowl: {name:'Тибетська чаша', play: () => { const a = audio(); if (!a) return; const t = a.currentTime + 0.05; tone(220, t, 5, 'sine', 0.5); tone(441, t, 4, 'sine', 0.2); tone(663, t, 2.5, 'sine', 0.1); }},
+  digital: {name:'Будильник', play: () => { const a = audio(); if (!a) return; const t = a.currentTime + 0.05; for (let r = 0; r < 3; r++) for (let i = 0; i < 4; i++) tone(1760, t + r * 0.9 + i * 0.13, 0.08, 'square', 0.18); }},
+  birds: {name:'Пташки', play: () => { const a = audio(); if (!a) return; const t0 = a.currentTime + 0.05;
+    for (let i = 0; i < 9; i++) { const t = t0 + i * 0.22 + (i > 4 ? 0.4 : 0); const o = a.createOscillator(), v = a.createGain();
+      o.frequency.setValueAtTime(2600 + (i % 3) * 400, t); o.frequency.exponentialRampToValueAtTime(4200 - (i % 2) * 600, t + 0.09);
+      v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(0.25 * pvol() + 0.0002, t + 0.02); v.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+      o.connect(v).connect(a.destination); o.start(t); o.stop(t + 0.15); } }},
+  none: {name:'Без звуку', play: () => {}}
+};
+const AMBS = {none:'Тиша', tick:'Цокання годинника', rain:'Дощ', brown:'Глибокий шум', white:'Білий шум'};
+function noiseBuf(a, kind){
+  const n = a.sampleRate * 3, b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+  let last = 0, b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < n; i++) {
+    const w = Math.random() * 2 - 1;
+    if (kind === 'white') d[i] = w * 0.35;
+    else if (kind === 'brown') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.2; }
+    else { b0 = 0.99765 * b0 + w * 0.099; b1 = 0.963 * b1 + w * 0.2965; b2 = 0.57 * b2 + w * 1.0527; d[i] = (b0 + b1 + b2 + w * 0.1848) * 0.11 + (Math.random() < 0.0009 ? (Math.random() - .5) * 0.9 : 0); }
+  }
+  return b;
+}
+function ambSet(kind){
+  if (kind === ambKind) { if (ambNode) ambNode.g.gain.value = 0.5 * pvol(); return; }
+  if (ambNode) { try { ambNode.src.stop(); } catch (e) {} ambNode = null; }
+  ambKind = kind;
+  if (kind === 'none' || kind === 'tick' || !kind) return;
+  const a = audio(); if (!a) return;
+  const src = a.createBufferSource(), g = a.createGain(); src.buffer = noiseBuf(a, kind); src.loop = true;
+  let node = src;
+  if (kind === 'rain') { const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 350; node.connect(f); node = f; }
+  g.gain.value = 0.5 * pvol(); node.connect(g).connect(a.destination); src.start(); ambNode = {src, g};
+}
+function ambUpdate(){ ambSet(prun.status === 'run' && prun.mode === 'focus' ? pcfg().amb : 'none'); }
+let lastTickSec = -1;
+function tickSound(){
+  const a = audio(); if (!a) return; const t = a.currentTime;
+  const o = a.createOscillator(), v = a.createGain(); o.type = 'triangle'; o.frequency.value = lastTickSec % 2 ? 1900 : 1500;
+  v.gain.setValueAtTime(0.0001, t); v.gain.exponentialRampToValueAtTime(0.12 * pvol() + 0.0002, t + 0.003); v.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+  o.connect(v).connect(a.destination); o.start(t); o.stop(t + 0.05);
+}
+function pnotify(text){
+  try { if (window.Notification && Notification.permission === 'granted') new Notification('Мої звички · Помодоро', {body:text, silent:true}); } catch (e) {}
+  if (DESKTOP && DESKTOP.attention) DESKTOP.attention();
+}
+
+/* логіка таймера */
+function pstart(){
+  audio();
+  try { if (window.Notification && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
+  if (prun.status === 'pause') { prun.endAt = Date.now() + prun.left; prun.status = 'run'; }
+  else if (prun.status === 'idle') { prun.total = pdur(prun.mode); prun.endAt = Date.now() + prun.total; prun.startedAt = Date.now(); prun.status = 'run'; }
+  prunSave(); ppaint();
+}
+function ppause(){ if (prun.status !== 'run') return; prun.left = Math.max(0, prun.endAt - Date.now()); prun.status = 'pause'; prunSave(); ppaint(); }
+function plog(min, full){
+  if (min < 1) return;
+  psessions().push({id:uid(), s:prun.startedAt, e:Date.now(), m:min, h:prun.habit || '', ...(full ? {} : {p:1})});
+  if (full && prun.habit && pcfg().mark) { const h = state.habits.find(x => x.id === prun.habit); if (h && h.measure === 'check' && h.type !== 'bad' && !entry(todayKey(), h.id)) setEntry(todayKey(), h.id, 1); }
+  save();
+}
+function pstop(){ // зупинити й скинути; фокус від 1 хв зараховується як перерваний
+  if (prun.mode === 'focus' && prun.status !== 'idle') plog(Math.floor((prun.total - pleft()) / 60000), false);
+  prun.status = 'idle'; prunSave(); ppaint(); if (view === 'pomo') render();
+}
+function pmode(m){ if (prun.status !== 'idle' && prun.mode === 'focus' && m !== 'focus') plog(Math.floor((prun.total - pleft()) / 60000), false); prun.mode = m; prun.status = 'idle'; prunSave(); ppaint(); if (view === 'pomo') render(); }
+function pskip(){ if (prun.mode === 'focus') { pstop(); pnext(false); } else pnext(false); }
+function pnext(auto){
+  const c = pcfg();
+  if (prun.mode === 'focus') { prun.mode = prun.done > 0 && prun.done % c.every === 0 ? 'long' : 'short'; }
+  else { if (prun.mode === 'long') prun.done = 0; prun.mode = 'focus'; }
+  prun.status = 'idle';
+  if (auto && (prun.mode === 'focus' ? c.autoFocus : c.autoBreak)) { prun.total = pdur(prun.mode); prun.endAt = Date.now() + prun.total; prun.startedAt = Date.now(); prun.status = 'run'; }
+  prunSave(); if (view === 'pomo') render(); else ppaint();
+}
+function pcomplete(){
+  const wasFocus = prun.mode === 'focus', late = Date.now() - prun.endAt > 60000;
+  if (wasFocus) { prun.done++; plog(Math.round(prun.total / 60000), true); }
+  const c = pcfg();
+  if (!late) (SOUNDS[c.sound] || SOUNDS.bell).play(!wasFocus);
+  pnotify(wasFocus ? 'Помодоро завершено 🍅 Час відпочити.' : 'Перерва закінчилась. До роботи!');
+  toast(wasFocus ? '🍅 Помодоро завершено! Час на перерву' : '☕ Перерва закінчилась');
+  pnext(!late);
+}
+function ptick(){
+  if (prun.status === 'run' && Date.now() >= prun.endAt) { pcomplete(); return; }
+  if (prun.status === 'run' && prun.mode === 'focus' && pcfg().amb === 'tick') { const s = Math.floor(pleft() / 1000); if (s !== lastTickSec) { lastTickSec = s; tickSound(); } }
+  ppaint(true);
+}
+
+/* малювання */
+function pringSVG(){
+  let s = '<svg viewBox="0 0 300 300">';
+  for (let i = 0; i < 60; i++) { const a = i * 6 * Math.PI / 180, x1 = 150 + 128 * Math.sin(a), y1 = 150 - 128 * Math.cos(a), x2 = 150 + 141 * Math.sin(a), y2 = 150 - 141 * Math.cos(a);
+    s += `<line class="tk" data-tk="${i}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`; }
+  return s + '<line class="hand" id="pHand" x1="150" y1="2" x2="150" y2="34"/></svg>';
+}
+let ppTitle = null;
+function ppaint(fromTick){
+  const left = pleft(), tot = ptotal(), frac = tot ? Math.min(1, Math.max(0, 1 - left / tot)) : 0, brk = prun.mode !== 'focus';
+  const el = $('#pTime');
+  if (el) {
+    el.textContent = pfmt(left);
+    const hand = $('#pHand'); if (hand) { hand.setAttribute('transform', `rotate(${(frac * 360).toFixed(2)} 150 150)`); hand.style.display = prun.status === 'idle' ? 'none' : ''; }
+    const pos = frac * 60, col = brk ? [56,189,248] : [239,68,68];
+    document.querySelectorAll('[data-tk]').forEach(t => {
+      const i = +t.dataset.tk;
+      if (prun.status !== 'idle' && i < pos) { const k = 0.35 + 0.65 * Math.pow(Math.max(0, 1 - (pos - i) / 60), 2.2); t.style.stroke = `rgba(${col},${k.toFixed(2)})`; }
+      else t.style.stroke = '';
+    });
+    const st = $('#pState'); if (st) st.textContent = prun.status === 'pause' ? 'Пауза' : PMODES[prun.mode];
+    if (!fromTick) { const bt = $('#pBtns'); if (bt) bt.innerHTML = pbtnsHTML(); }
+  }
+  // плашка в шапці — видно таймер з будь-якої сторінки
+  const pill = $('#pomoPill');
+  if (pill) {
+    const on = prun.status !== 'idle';
+    pill.classList.toggle('hidden', !on || view === 'pomo');
+    pill.classList.toggle('brk', brk); pill.classList.toggle('paused', prun.status === 'pause');
+    if (on) pill.textContent = (brk ? '☕ ' : '🍅 ') + pfmt(left) + (prun.status === 'pause' ? ' ⏸' : '');
+  }
+  if (ppTitle === null) ppTitle = document.title;
+  document.title = prun.status === 'run' ? `${pfmt(left)} · ${brk ? 'Перерва' : 'Фокус'}` : ppTitle;
+  if (!fromTick) ambUpdate();
+}
+function pbtnsHTML(){
+  if (prun.status === 'run') return `<button class="pbtn" data-pomo="pause">Пауза</button><button class="pbtn ghost" data-pomo="stop">Стоп</button>`;
+  if (prun.status === 'pause') return `<button class="pbtn main" data-pomo="start">Продовжити</button><button class="pbtn ghost" data-pomo="stop">Стоп</button>`;
+  return `<button class="pbtn main" data-pomo="start">${prun.mode === 'focus' ? 'Почати фокус' : 'Почати перерву'}</button>${prun.mode !== 'focus' ? '<button class="pbtn ghost" data-pomo="skip">Пропустити</button>' : ''}`;
+}
+const hm2 = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+const dayOf = t => dkey(new Date(t));
+function renderPomo(){
+  const c = pcfg(), t = todayKey(), hs = activeHabits();
+  if (prun.habit && !state.habits.find(h => h.id === prun.habit)) prun.habit = '';
+  const today = psessions().filter(s => dayOf(s.e) === t).sort((a, b) => b.e - a.e);
+  const mins = today.reduce((a, s) => a + s.m, 0), full = today.filter(s => !s.p).length;
+  const hname = id => { const h = state.habits.find(x => x.id === id); return h ? esc(h.name) : 'Без звички'; };
+  // шкала дня: з 6:00 (або раніше, якщо були сесії) до 24:00
+  const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+  const firstH = Math.min(6, ...today.map(s => new Date(s.s).getHours()));
+  const from = d0.getTime() + firstH * 3600000, span = (24 - firstH) * 3600000;
+  const segs = today.map(s => { const a = Math.max(0, (Math.max(s.s, from) - from) / span * 100), b = Math.min(100, (s.e - from) / span * 100); return `<i class="${s.p ? 'part' : ''}" style="left:${a}%;width:${Math.max(0.4, b - a)}%" title="${hm2(s.s)}–${hm2(s.e)} · ${s.m} хв"></i>`; }).join('');
+  const mid = Math.round((firstH + 24) / 2);
+  // тиждень
+  const week = []; for (let i = 6; i >= 0; i--) { const dd = new Date(); dd.setDate(dd.getDate() - i); const k = dkey(dd); week.push({k, l:dd.toLocaleDateString('uk-UA', {weekday:'short'}), m:psessions().filter(s => dayOf(s.e) === k).reduce((a, s) => a + s.m, 0)}); }
+  const wmax = Math.max(25, ...week.map(w => w.m)), wsum = week.reduce((a, w) => a + w.m, 0);
+  const every = Math.max(1, +c.every || 4), inCycle = prun.done % every || (prun.done && prun.mode !== 'focus' ? every : 0);
+  $('#main').innerHTML = `
+    <div class="pomo">
+      <div class="pstage ${prun.mode !== 'focus' ? 'brk' : ''}">
+        <div class="pmodes">${Object.entries(PMODES).map(([k, v]) => `<button class="${prun.mode === k ? 'on' : ''}" data-pomo="mode" data-m="${k}">${v}</button>`).join('')}</div>
+        <select class="ptask" id="pHabit"><option value="">Обери звичку для фокусу…</option>${hs.map(h => `<option value="${h.id}" ${h.id === prun.habit ? 'selected' : ''}>${esc(h.name)}</option>`).join('')}</select>
+        <div class="pring">${pringSVG()}<div class="ptime"><b id="pTime">${pfmt(pleft())}</b><span id="pState"></span></div></div>
+        <div class="pbtns" id="pBtns">${pbtnsHTML()}</div>
+        <div class="pdots" title="Помодоро в поточному циклі">${Array.from({length:every}, (_, i) => `<i class="${i < inCycle ? 'on' : ''}"></i>`).join('')}<span style="margin-left:6px">довга перерва після ${every}-го</span></div>
+        <div class="psnd"><button data-pomo="amb" class="${c.amb !== 'none' ? 'on' : ''}" title="Фоновий звук: ${AMBS[c.amb] || ''}">${c.amb === 'none' ? '🔈' : '🎧'}</button><button data-pomo="test" title="Прослухати сигнал">🔔</button></div>
+      </div>
+      <div class="pside">
+        <div class="panel"><h3>Помодоро сьогодні</h3>
+          <div class="pstats"><div class="pbig">${mins}<small>хв</small></div><div class="pbig">${full}<small>🍅</small></div></div></div>
+        <div class="panel"><h3>Фокус-час за день</h3>
+          <div class="ptl">${segs}</div><div class="ptlx"><span>${String(firstH).padStart(2, '0')}:00</span><span>${mid}:00</span><span>24:00</span></div>
+          <div class="plist">${today.length ? today.map(s => `<div class="it"><span class="tm">${hm2(s.s)}–${hm2(s.e)}</span><span class="nm">${hname(s.h)}${s.p ? ' <span style="color:#f59e0b">(перервано)</span>' : ''}</span><span class="mn">${s.m} хв</span></div>`).join('') : '<div class="pempty">Ще немає сесій. Натисни «Почати фокус» 🍅</div>'}</div></div>
+        <div class="panel"><h3>За тиждень</h3><div class="cap" style="margin:4px 0 0">Разом ${wsum >= 60 ? Math.floor(wsum / 60) + ' год ' : ''}${wsum % 60} хв</div>
+          <div class="pweek">${week.map(w => `<div class="${w.k === t ? 'today' : ''}" title="${w.m} хв"><span>${w.m || ''}</span><b style="height:${Math.round(w.m / wmax * 60)}px"></b>${w.l}</div>`).join('')}</div></div>
+        <div class="panel"><h3>Налаштування таймера</h3>
+          <div class="pset">
+            <span>Фокус, хв</span><input type="number" min="1" max="180" data-pcfg="focus" value="${c.focus}">
+            <span>Коротка перерва, хв</span><input type="number" min="1" max="60" data-pcfg="short" value="${c.short}">
+            <span>Довга перерва, хв</span><input type="number" min="1" max="90" data-pcfg="long" value="${c.long}">
+            <span>Довга перерва після</span><input type="number" min="1" max="12" data-pcfg="every" value="${c.every}">
+            <span>Перерва стартує сама</span><input type="checkbox" data-pcfg="autoBreak" ${c.autoBreak ? 'checked' : ''}>
+            <span>Наступний фокус стартує сам</span><input type="checkbox" data-pcfg="autoFocus" ${c.autoFocus ? 'checked' : ''}>
+            <span>Відмічати звичку виконаною після 🍅</span><input type="checkbox" data-pcfg="mark" ${c.mark ? 'checked' : ''}>
+            <span>Сигнал завершення</span><select data-pcfg="sound">${Object.entries(SOUNDS).map(([k, v]) => `<option value="${k}" ${c.sound === k ? 'selected' : ''}>${v.name}</option>`).join('')}</select>
+            <span>Фоновий звук під час фокусу</span><select data-pcfg="amb">${Object.entries(AMBS).map(([k, v]) => `<option value="${k}" ${c.amb === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+            <span>Гучність</span><input type="range" min="0" max="100" data-pcfg="vol" value="${c.vol}">
+          </div>
+          ${DESKTOP ? '' : '<div class="hint" style="margin:10px 0 0">На iPhone таймер рахує й у фоні, але звук пролунає, лише коли програма відкрита на екрані.</div>'}
+        </div>
+      </div>
+    </div>`;
+  $('#pHabit').addEventListener('change', e => { prun.habit = e.target.value; prunSave(); });
+  ppaint();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pomo]'); if (!b) return;
+  const a = b.dataset.pomo;
+  if (a === 'start') pstart(); else if (a === 'pause') ppause(); else if (a === 'stop') pstop(); else if (a === 'skip') pskip();
+  else if (a === 'mode') pmode(b.dataset.m);
+  else if (a === 'test') { audio(); (SOUNDS[pcfg().sound] || SOUNDS.bell).play(prun.mode !== 'focus'); }
+  else if (a === 'amb') { const ks = Object.keys(AMBS), c = pcfg(); state.settings.pomo = {...(state.settings.pomo || {}), amb: ks[(ks.indexOf(c.amb) + 1) % ks.length]}; save(); audio(); toast('Фоновий звук: ' + AMBS[pcfg().amb]); render(); }
+});
+document.addEventListener('click', e => { if (e.target.closest('#pomoPill')) { view = 'pomo'; render(); } });
+document.addEventListener('change', e => {
+  const k = e.target.dataset && e.target.dataset.pcfg; if (!k) return;
+  const v = e.target.type === 'checkbox' ? e.target.checked : e.target.type === 'number' ? Math.max(+e.target.min || 1, Math.min(+e.target.max || 180, Math.round(+e.target.value) || PDEF[k])) : e.target.type === 'range' ? +e.target.value : e.target.value;
+  state.settings.pomo = {...(state.settings.pomo || {}), [k]: v}; save();
+  if (k === 'sound') { audio(); (SOUNDS[v] || SOUNDS.bell).play(false); }
+  if (k === 'amb' && v !== 'none' && prun.status !== 'run') { audio(); toast('Фоновий звук гратиме під час фокусу'); }
+  if (['focus','short','long'].includes(k) && prun.status === 'idle') ppaint();
+  if (k === 'every' || k === 'amb') render(); else ambUpdate();
+});
+document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.pcfg === 'vol') { state.settings.pomo = {...(state.settings.pomo || {}), vol:+e.target.value}; if (ambNode) ambNode.g.gain.value = 0.5 * pvol(); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ptick(); });
+setInterval(ptick, 250);
 
 render();
 paintSideFoot();
