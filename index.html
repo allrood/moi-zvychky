@@ -1367,6 +1367,7 @@ function dbxStartAuth(){
 async function dbxFinishAuth(){
   const code = ($('#dbxCodeInp') ? $('#dbxCodeInp').value : '').trim();
   if (!code) { toast('Встав код з Dropbox'); return; }
+  const hz = code.match(/HZ1\.[A-Za-z0-9_-]+/); if (hz) { joinByCode(hz[0]); return; } // це код з комп'ютера, а не з Dropbox
   try {
     const r = await xfetch('https://api.dropboxapi.com/oauth2/token', {method:'POST', headers:FORM, body:form({code, grant_type:'authorization_code', client_id:dbxKey(), code_verifier:sync.verifier})});
     const j = await r.json().catch(() => ({}));
@@ -1452,7 +1453,8 @@ function syncPanelBody(){
       <div class="hint" style="margin:6px 0 0">Код дає доступ лише до папки «Звичок» у твоєму Dropbox. Не пересилай його іншим людям.</div></div>` : ''}`;
   if (sync.verifier) return `<div class="syncbox"><b>Крок 2 з 2</b><ol><li>У вікні Dropbox натисни «Allow / Дозволити». Якщо вікно не відкрилося, натисни кнопку «Відкрити сторінку Dropbox» нижче.</li><li>Скопіюй код, який покаже Dropbox, і встав сюди.</li></ol>
     <div class="row"><input class="inp" id="dbxCodeInp" placeholder="Код з Dropbox" style="flex:1;min-width:180px"><button class="btn primary" data-act="dbxcode">Підключити</button></div>
-    <div class="row" style="margin-top:6px"><a class="btn" href="${esc(sync.authUrl || '#')}" target="_blank" rel="noopener">Відкрити сторінку Dropbox</a><button class="btn plain" data-act="dbxcancel">Скасувати</button></div></div>`;
+    <div class="row" style="margin-top:6px"><a class="btn" href="${esc(sync.authUrl || '#')}" target="_blank" rel="noopener">Відкрити сторінку Dropbox</a><button class="btn plain" data-act="dbxcancel">Скасувати</button></div>
+    <div class="hint" style="margin:8px 0 0">Маєш код з комп'ютера (HZ1.…)? Його теж можна вставити в це поле.</div></div>`;
   return `<div class="cap">Щоб звички були однакові на ПК і на iPhone. Дані лежатимуть у твоєму Dropbox, у папці «Програми». Безкоштовно.</div>
     ${DBX_APP_KEY ? '' : `<label class="f">App key додатка Dropbox</label><input class="inp" id="dbxKey" value="${esc(sync.appKey || '')}" placeholder="напр. a1b2c3d4e5f6g7h" style="max-width:320px">`}
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="dbxauth">Підключити Dropbox</button></div>
