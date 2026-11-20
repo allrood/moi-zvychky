@@ -857,7 +857,7 @@ function renderDashboard(){
       ${modeSeg()}
       <input class="search" id="search" placeholder="Пошук звичок…" value="${esc(search)}">
     </div>
-    ${finishBanner()}
+    ${syncBanner()}${finishBanner()}
     <div id="daysum"></div>
     <h2>Мої звички</h2>
     <div class="hint">Відмічай, став оцінку або вписуй цифру. Відсоток виконання рахується автоматично. Від ${thr()}% день іде в серію.</div>
@@ -905,7 +905,7 @@ function renderTable(){
       <input class="search" id="search" placeholder="Пошук звичок…" value="${esc(search)}">
     </div>
     <div class="hint" style="margin-top:6px">Клацни на клітинку, щоб поставити результат за будь-який день. ✓ / ✗ / ? для відміток, цифра або оцінка — для решти, · — день не за розкладом. Кільце зліва — виконання за 30 днів.</div>
-    ${finishBanner()}
+    ${syncBanner()}${finishBanner()}
     ${activeHabits().length ? `<div class="ttable" style="--n:${TDAYS}">
       <div class="tr thead"><div class="tnav"><button class="btn" data-shift="${TDAYS}" title="Раніше">‹ раніше</button>
         <button class="btn" data-shift="-${TDAYS}" ${tableOff === 0 ? 'disabled' : ''} title="Пізніше">пізніше ›</button>
@@ -1261,6 +1261,18 @@ function restoreHabit(id){
   save(); render(); toast('Звичку відновлено');
 }
 // плашка про звички, що нещодавно завершилися за кінцевою датою
+// плашка на головній: на телефоні (програма з іконки має своє сховище) підключення робиться тут же
+function syncBanner(){
+  if (DESKTOP || sync.refresh) return '';
+  let hidden = false; try { hidden = localStorage.getItem('habits-syncbanner-off') === '1'; } catch (e) {}
+  if (hidden) return '';
+  return `<div class="fbanner sbanner" style="border-color:var(--accent);flex-wrap:wrap"><div style="flex:1;min-width:200px"><b>☁ Синхронізацію з ПК не підключено</b>
+    <div class="hint" style="margin:2px 0 0">На ПК: «Налаштування» → «☁ Синхронізація» → «📱 Підключити інший пристрій» → «Скопіювати код». Перешли код собі на телефон, скопіюй і натисни кнопку нижче.</div></div>
+    <div class="row" style="width:100%">
+      ${navigator.clipboard && navigator.clipboard.readText ? '<button class="btn primary" data-act="dbxpaste">📋 Вставити з буфера й підключити</button>' : ''}
+      <input class="inp" id="bannerLinkInp" placeholder="або встав код HZ1.… сюди" style="flex:1;min-width:160px"><button class="btn" data-act="dbxjoinbanner">Підключити</button>
+      <button class="btn plain" data-act="sbannerhide">Не зараз</button></div></div>`;
+}
 function finishBanner(){
   const t = todayKey();
   return state.habits.filter(h => finished(h) && !h.closed && daysBetween(h.end, t) <= 3).map(h => {
@@ -1479,7 +1491,7 @@ function joinByCode(given){
     const o = JSON.parse(new TextDecoder().decode(Uint8Array.from(b, c => c.charCodeAt(0))));
     if (!o.k || !o.r) throw 0;
     sync = {appKey:o.k, refresh:o.r}; syncCfgSave();
-    toast('Підключаю…'); syncNow(true);
+    toast('Підключаю…'); syncNow(true).then(() => { if (!draft) render(); });
   } catch (e) { toast('Код не схожий на код з комп\'ютера. Скопіюй його ще раз повністю.'); }
 }
 function paintSync(){
@@ -1502,7 +1514,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.3.6'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.3.7'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1648,6 +1660,8 @@ document.addEventListener('click', e => {
     case 'dbxcopylink': { const url = 'https://allrood.github.io/moi-zvychky/#' + linkCode(); (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast('Посилання скопійовано'), () => toast('Не вдалося скопіювати')); break; }
     case 'dbxlinkhide': showLink = false; paintSync(); break;
     case 'dbxjoin': joinByCode(); break;
+    case 'dbxjoinbanner': joinByCode($('#bannerLinkInp') ? $('#bannerLinkInp').value : ''); break;
+    case 'sbannerhide': try { localStorage.setItem('habits-syncbanner-off', '1'); } catch (e) {} render(); toast('Підключити можна в «Налаштування» → «☁ Синхронізація»'); break;
     case 'dbxpaste': navigator.clipboard.readText().then(t => { const m = (t || '').match(/HZ1\.[A-Za-z0-9_-]+/); if (m) joinByCode(m[0]); else toast('У буфері немає коду HZ1.… Скопіюй його ще раз.'); }, () => toast('Не вдалося прочитати буфер, встав код у поле вручну')); break;
     case 'dbxcopy': { const ta = $('#linkCode'); ta.select(); (navigator.clipboard ? navigator.clipboard.writeText(ta.value) : Promise.reject()).then(() => toast('Код скопійовано'), () => { try { document.execCommand('copy'); toast('Код скопійовано'); } catch (e) { toast('Виділи код і скопіюй вручну'); } }); break; }
     case 'dbxoff': if (confirm('Відключити синхронізацію на цьому пристрої? Дані тут і в Dropbox залишаться.')) { sync = {}; syncCfgSave(); try { localStorage.removeItem(SYNC_BASE); } catch (e) {} paintSync(); toast('Синхронізацію вимкнено'); } break;
