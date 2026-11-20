@@ -1124,6 +1124,7 @@ function renderSettings(){
       <div class="hint" style="margin-top:10px">Правило з «Атомних звичок»: пропустити один раз — нормально, двічі поспіль — ні. Таку звичку буде позначено ⚠.</div>
     </div>
     <div class="panel"><h3>Резервна копія</h3>
+      ${DESKTOP ? '' : `<div class="cap">Версія програми <b>${WEB_VERSION}</b>. <button class="btn plain" data-act="webrefresh" style="display:inline;padding:0">↻ Оновити програму</button></div>`}
       <div class="cap">${DESKTOP ? `Дані зберігаються у файлі на цьому комп'ютері: <code>${esc(DESKTOP.dataPath())}</code>. Щодня автоматично робиться резервна копія (останні 30 днів).` : "Дані зберігаються в цьому браузері на цьому комп'ютері. Час від часу роби експорт. Цей самий файл знадобиться для переносу в десктопну версію."}</div>
       <div class="row"><button class="btn primary" data-act="export">Експорт у файл</button>
       <label class="btn">Імпорт з файлу<input type="file" id="importFile" accept=".json" hidden></label>
@@ -1501,7 +1502,28 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : '');
+const WEB_VERSION = '1.3.6'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
+// Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
+async function hardRefresh(v){
+  try { const regs = await navigator.serviceWorker.getRegistrations(); await Promise.all(regs.map(r => r.unregister())); } catch (e) {}
+  try { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } catch (e) {}
+  location.replace(location.pathname + '?v=' + encodeURIComponent(v || Date.now()));
+}
+async function checkWebVersion(){
+  if (DESKTOP || !/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch('version.json?t=' + Date.now(), {cache:'no-store'});
+    const v = (await r.json()).version;
+    if (v && v !== WEB_VERSION) {
+      let tried = null; try { tried = sessionStorage.getItem('habits-upd'); } catch (e) {}
+      if (tried === v) return; // уже пробували — не зациклюємось
+      try { sessionStorage.setItem('habits-upd', v); } catch (e) {}
+      persist(); toast('Оновлюю програму до ' + v + '…'); setTimeout(() => hardRefresh(v), 600);
+    }
+  } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkWebVersion(); });
 let updState = {checked:false, available:null, hidden:false, busy:false, lastCheck:0};
 function updBox(){
   const u = updState.available;
@@ -1617,6 +1639,7 @@ document.addEventListener('click', e => {
     case 'export': exportData(); break;
     case 'openFolder': DESKTOP && DESKTOP.openFolder(); break;
     case 'checkupd': checkUpdate(true); break;
+    case 'webrefresh': persist(); hardRefresh(WEB_VERSION + '-' + Date.now()); break;
     case 'dbxauth': dbxStartAuth(); break;
     case 'dbxcode': dbxFinishAuth(); break;
     case 'dbxcancel': delete sync.verifier; syncCfgSave(); paintSync(); break;
@@ -1653,7 +1676,7 @@ $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') cl
 render();
 paintSideFoot();
 checkUpdate(false);
-paintSync(); autoSync(); preparePkce();
+paintSync(); autoSync(); preparePkce(); checkWebVersion();
 // посилання виду …/#HZ1.… підключає пристрій одразу; код не йде на сервер і прибирається з адреси
 (() => { const m = location.hash.match(/HZ1\.[A-Za-z0-9_-]+/); if (!m) return; history.replaceState(null, '', location.pathname + location.search); if (!sync.refresh) joinByCode(m[0]); })();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
