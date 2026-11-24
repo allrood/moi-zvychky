@@ -275,6 +275,8 @@
   .pdots{display:flex;gap:7px;margin-top:16px;align-items:center;color:#8e94a3;font-size:12px}
   .pdots i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-block}
   .pdots i.on{background:#fb7185}
+  .preset{margin-left:8px;background:rgba(255,255,255,.07);border:0;color:#c9cdd8;border-radius:999px;padding:4px 10px;font-size:12px;cursor:pointer}
+  .preset:hover{background:rgba(255,255,255,.14)}
   .psnd{position:absolute;top:14px;right:14px;display:flex;gap:6px}
   .psnd button{background:rgba(255,255,255,.08);border:0;color:#d5d8e0;border-radius:999px;width:34px;height:34px;cursor:pointer;font-size:15px}
   .psnd button.on{background:rgba(251,113,133,.35)}
@@ -1592,7 +1594,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.2'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.3'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1870,6 +1872,13 @@ function plog(min, full){
   save();
 }
 // «відмітити виконаною»: галочка — так; число — ставимо ціль (якщо ще не досягнута); оцінка — 5
+// новий день — нова серія: вчорашні помодоро в циклі не переносяться
+function pdayReset(){
+  const last = prun.day || (prun.t ? dkey(new Date(prun.t)) : null);
+  if (prun.status !== 'idle' || !last || last === todayKey() || (!prun.done && prun.mode === 'focus')) return false;
+  prun.done = 0; prun.mode = 'focus'; prun.day = todayKey(); prunSave(); return true;
+}
+function preset(){ prun.done = 0; prun.day = todayKey(); if (prun.status === 'idle') prun.mode = 'focus'; prunSave(); render(); toast('Серію помодоро скинуто'); }
 function pmark(h){
   if (!h || h.type === 'bad') return;
   const k = todayKey(), e = entry(k, h.id);
@@ -1898,7 +1907,7 @@ function pnext(auto, at){
 }
 function pcomplete(){
   const wasFocus = prun.mode === 'focus', late = Date.now() - prun.endAt > 60000;
-  if (wasFocus) { prun.done++; plog(Math.round(prun.total / 60000), true); }
+  if (wasFocus) { prun.done++; prun.day = todayKey(); plog(Math.round(prun.total / 60000), true); }
   const c = pcfg();
   if (!late) (SOUNDS[c.sound] || SOUNDS.bell).play(!wasFocus);
   pnotify(wasFocus ? 'Помодоро завершено 🍅 Час відпочити.' : 'Перерва закінчилась. До роботи!');
@@ -1907,6 +1916,7 @@ function pcomplete(){
 }
 function ptick(){
   if (ptimerAdopt()) return;
+  if (pdayReset()) { if (view === 'pomo') render(); return; }
   if (prun.status === 'run' && Date.now() >= prun.endAt) { pcomplete(); return; }
   if (prun.status === 'run' && prun.mode === 'focus' && pcfg().amb === 'tick') { const s = Math.floor(pleft() / 1000); if (s !== lastTickSec) { lastTickSec = s; tickSound(); } }
   ppaint(true);
@@ -1955,6 +1965,7 @@ function pbtnsHTML(){
 const hm2 = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 const dayOf = t => dkey(new Date(t));
 function renderPomo(){
+  pdayReset();
   const c = pcfg(), t = todayKey(), hs = activeHabits();
   if (prun.habit && !state.habits.find(h => h.id === prun.habit)) prun.habit = '';
   const today = psessions().filter(s => dayOf(s.e) === t).sort((a, b) => b.e - a.e);
@@ -1977,7 +1988,7 @@ function renderPomo(){
         <select class="ptask" id="pHabit"><option value="">Обери звичку для фокусу…</option>${hs.map(h => `<option value="${h.id}" ${h.id === prun.habit ? 'selected' : ''}>${esc(h.name)}</option>`).join('')}</select>
         <div class="pring">${pringSVG()}<div class="ptime"><b id="pTime">${pfmt(pleft())}</b><span id="pState"></span></div></div>
         <div class="pbtns" id="pBtns">${pbtnsHTML()}</div>
-        <div class="pdots" title="Помодоро в поточному циклі">${Array.from({length:every}, (_, i) => `<i class="${i < inCycle ? 'on' : ''}"></i>`).join('')}<span style="margin-left:6px">довга перерва після ${every}-го</span></div>
+        <div class="pdots" title="Помодоро в поточному циклі">${Array.from({length:every}, (_, i) => `<i class="${i < inCycle ? 'on' : ''}"></i>`).join('')}<span style="margin-left:6px">довга перерва після ${every}-го</span><button class="preset" data-pomo="reset" title="Скинути серію й почати цикл заново">↺ скинути</button></div>
         <div class="psnd"><button data-pomo="amb" class="${c.amb !== 'none' ? 'on' : ''}" title="Фоновий звук: ${AMBS[c.amb] || ''}">${c.amb === 'none' ? '🔈' : '🎧'}</button><button data-pomo="test" title="Прослухати сигнал">🔔</button></div>
       </div>
       <div class="pside">
@@ -2013,6 +2024,7 @@ document.addEventListener('click', e => {
   const a = b.dataset.pomo;
   if (a === 'start') pstart(); else if (a === 'pause') ppause(); else if (a === 'stop') pstop(); else if (a === 'skip') pskip();
   else if (a === 'mode') pmode(b.dataset.m);
+  else if (a === 'reset') preset();
   else if (a === 'test') { audio(); (SOUNDS[pcfg().sound] || SOUNDS.bell).play(prun.mode !== 'focus'); }
   else if (a === 'amb') { const ks = Object.keys(AMBS), c = pcfg(); state.settings.pomo = {...(state.settings.pomo || {}), amb: ks[(ks.indexOf(c.amb) + 1) % ks.length]}; save(); audio(); toast('Фоновий звук: ' + AMBS[pcfg().amb]); render(); }
 });
