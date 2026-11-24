@@ -151,6 +151,14 @@
   .fbanner{display:flex;align-items:center;gap:10px;background:var(--card);border-left:4px solid var(--accent);border-radius:10px;padding:10px 12px;margin:10px 0 0}
   .panel.fin{border:1px solid var(--accent)}
   .card.finished{opacity:.85}
+  .steps-how{margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .steps-how summary{cursor:pointer;color:var(--accent);font-weight:600}
+  .steps-how ol{margin:8px 0 0 18px;padding:0;line-height:1.55}
+  .steps-how b{color:var(--text)}
+  .finstat{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:6px;font-size:12.5px;color:var(--muted)}
+  .finstat b{color:var(--text);font-size:14px}
+  .finlbl{margin-left:8px;font-size:11px;color:var(--muted);font-weight:500;white-space:nowrap}
+  .review .c.off{opacity:0}
   .tf{text-align:center;font-size:11.5px;color:var(--muted);font-weight:600;padding:8px 0}
   .pop{position:absolute;z-index:25;background:#2a2c3b;border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 8px 24px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px;min-width:220px}
   .pop .ptitle{font-size:12px;color:var(--muted);font-weight:600}
@@ -523,8 +531,12 @@ function isDue(h, k){
 }
 const finished = h => !!(h.closed || (h.end && h.end < todayKey()));
 const activeHabits = () => state.habits.filter(h => !finished(h));
-const lastDay = h => h.end && h.end < todayKey() ? h.end : todayKey();
-const inLife = (h, k) => k >= startOf(h) && (!h.end || k <= h.end);
+const lastDay = h => finished(h) ? lifeEnd(h) : todayKey();
+// день завершення вручну без відмітки не рахується як пропуск
+const lifeEnd = h => !h.end ? null : (h.closed && !entry(h.end, h.id) ? dkey(addDays(parseKey(h.end), -1)) : h.end);
+const inLife = (h, k) => k >= startOf(h) && (!h.end || k <= lifeEnd(h));
+// чи жила звичка хоч день у проміжку from..to
+const aliveIn = (h, from, to) => startOf(h) <= to && (!h.end || lifeEnd(h) >= from);
 // чи показувати день у графіках / історії
 const shown = (h, k) => inLife(h,k) && (!!entry(k,h.id) || (!isWeekly(h) && isDue(h,k) && k < todayKey()));
 const weekStart = k => dkey(addDays(parseKey(k), -dow(k)));
@@ -866,7 +878,7 @@ function renderHabit(){
       ${finished(h) ? '' : `<button class="btn" data-finish="${h.id}" title="Завершити звичку">🏁</button>`}
     </div>
     ${finished(h) ? (() => { const fr = habitRate(h, rangeKeys(startOf(h), h.end)); return `<div class="panel fin"><div class="row"><h3>🏁 Звичку завершено ${longDate(h.end)}</h3><div class="spacer"></div><button class="btn primary" data-restore="${h.id}">↺ Відновити</button></div>
-      <div class="hint" style="margin:6px 0 0">Період ${fullDate(startOf(h))} – ${fullDate(h.end)} (${daysBetween(startOf(h), h.end)+1} дн.) · виконання ${fr === null ? '—' : Math.round(fr) + '%'} · найкраща серія ${bestStreak(h)} ${sUnit(h)}. Усі записи збережено.</div></div>`; })() : ''}
+      <div class="hint" style="margin:6px 0 0">Період ${fullDate(startOf(h))} – ${fullDate(lifeEnd(h))} (${daysBetween(startOf(h), lifeEnd(h))+1} дн.) · виконання ${fr === null ? '—' : Math.round(fr) + '%'} · найкраща серія ${bestStreak(h)} ${sUnit(h)}. Усі записи збережено.</div></div>`; })() : ''}
     ${goalPanel(h)}
     <div class="dtiles">
       ${tile('🔥','Поточна серія', streak(h), sUnit(h), true)}
@@ -1060,6 +1072,24 @@ function renderList(){
   }).join('');
 }
 
+// підсумок завершеної звички в її власних одиницях
+function finStats(h){
+  const keys = rangeKeys(startOf(h), h.end).filter(k => inLife(h,k));
+  const plan = counted(h, keys).length, es = keys.map(k => entry(k,h.id)).filter(Boolean);
+  const ok = keys.filter(k => P(h,k) >= 100).length;
+  const b = (v, l) => `<span><b>${v}</b> ${l}</span>`;
+  if (h.measure === 'number') {
+    const vals = es.map(e => +e.v || 0), sum = vals.reduce((a,v) => a + v, 0), u = esc(h.unit || '');
+    if (!vals.length) return b('0', 'записів');
+    const out = [h.dir === 'max' ? b(fmt(Math.round(sum / vals.length * 10) / 10), (u ? u + ' ' : '') + 'у середньому за день') : b(fmt(Math.round(sum * 10) / 10), (u ? u + ' ' : '') + 'разом')];
+    if (h.dir !== 'max') out.push(b(fmt(Math.round(sum / vals.length * 10) / 10), 'у середньому за день'), b(fmt(Math.max(...vals)), 'найкращий день'));
+    else out.push(b(fmt(Math.min(...vals)), 'найменше за день'));
+    out.push(b(`${ok} з ${plan}`, `дн. ${h.dir === 'max' ? 'в межах ліміту' : 'з виконаною ціллю'} (${h.dir === 'max' ? 'не більше' : 'ціль'} ${fmt(h.target || 0)})`));
+    return out.join('');
+  }
+  if (h.measure === 'rating') { const vals = es.map(e => +e.v); return vals.length ? b((avg(vals)).toFixed(1).replace('.', ',') + ' / 5', 'середня оцінка') + b(vals.length, 'оцінок') + b(vals.filter(v => v === 5).length, 'на «відмінно»') : b('0', 'оцінок'); }
+  return b(`${ok} з ${plan}`, h.type === 'bad' ? 'днів без зриву' : 'днів виконано') + b(plan ? Math.round(ok / plan * 100) + '%' : '—', 'успішність');
+}
 function renderManage(){
   const act = activeHabits(), fin = state.habits.filter(finished).sort((a,b) => b.end.localeCompare(a.end));
   $('#main').innerHTML = `
@@ -1082,15 +1112,16 @@ function renderManage(){
       ${fin.map(h => { const r = habitRate(h, rangeKeys(startOf(h), h.end)); return `<div class="card finished">
         <div class="icon clickable" data-open="${h.id}" style="background:${h.color}">${iconHTML(h.icon)}</div>
         <div class="info"><div><span class="title clickable" data-open="${h.id}">${esc(h.name)}</span></div>
-        <div class="sub">${fullDate(startOf(h))} – ${fullDate(h.end)} · ${daysBetween(startOf(h), h.end)+1} дн. · виконання <b>${r === null ? '—' : Math.round(r) + '%'}</b> · 🏆 ${bestStreak(h)} ${sUnit(h)}</div></div>
+        <div class="sub">${fullDate(startOf(h))} – ${fullDate(lifeEnd(h))} · ${daysBetween(startOf(h), lifeEnd(h))+1} дн. · виконання <b>${r === null ? '—' : Math.round(r) + '%'}</b> · 🏆 ${bestStreak(h)} ${sUnit(h)}</div>
+        <div class="finstat">${finStats(h)}</div></div>
         <button class="btn" data-restore="${h.id}">↺ Відновити</button>
         <button class="btn danger" data-del="${h.id}">Видалити</button>
       </div>`; }).join('')}` : ''}`;
 }
 
 function renderProgress(){
-  const hs = selHabits();
   const keys = periodKeys(period);
+  const hs = filter === 'all' ? selHabits().filter(h => aliveIn(h, keys[0], keys[keys.length - 1])) : selHabits();
   const pLabel = {7:'Останні 7 днів', 30:'Останні 30 днів', 90:'Останні 90 днів', 365:'Останній рік', all:'За весь час'}[period];
   const rates = keys.map(k => dayRate(k,hs)).filter(v => v !== null);
   const avgRate = rates.length ? Math.round(avg(rates)) : null;
@@ -1115,11 +1146,12 @@ function renderProgress(){
   const mon = addDays(parseKey(todayKey()), -dow(todayKey()) + weekOff*7);
   const wkeys = [0,1,2,3,4,5,6].map(i => dkey(addDays(mon,i)));
   const wLabel = weekOff === 0 ? 'Цей тиждень' : weekOff === -1 ? 'Минулий тиждень' : `${-weekOff} тиж. тому`;
-  const review = hs.map(h => {
-    const vals = wkeys.map(k => (k > todayKey() || k < startOf(h)) ? null : (k === todayKey() && !entry(k,h.id) ? null : P(h,k)));
+  const review = hs.filter(h => filter !== 'all' || aliveIn(h, wkeys[0], wkeys[6])).map(h => {
+    const vals = wkeys.map(k => (k > todayKey() || !inLife(h,k)) ? null : (k === todayKey() && !entry(k,h.id) ? null : P(h,k)));
     const v = vals.filter(x => x !== null);
     return `<div class="nm"><div class="icon" style="background:${h.color}">${iconHTML(h.icon)}</div>${esc(h.name)}</div>
-      ${vals.map(p => `<div class="c" style="background:${levelColor(p,h.color)};color:${p >= 75 ? '#151621' : '#e8eaf0'}">${p === null ? '' : p+'%'}</div>`).join('')}
+      ${vals.map((p,i) => { const fin = h.end && finished(h) && wkeys[i] === lifeEnd(h), after = h.end && wkeys[i] > lifeEnd(h);
+        return `<div class="c${after ? ' off' : ''}" style="background:${after ? 'transparent' : levelColor(p,h.color)};color:${p >= 75 ? '#151621' : '#e8eaf0'}" ${fin ? 'title="Звичку завершено"' : ''}>${p === null ? '' : p+'%'}${fin ? ' 🏁' : ''}</div>`; }).join('')}
       <div class="c" style="background:none">${v.length ? Math.round(avg(v))+'%' : '—'}</div>`;
   }).join('');
 
@@ -1181,7 +1213,7 @@ function renderProgress(){
         <div class="seg soft">${[['rate','Виконання'],['streak','Серія'],['done','Відмітки'],['name','Назва']].map(([s,l]) => `<button class="${sortBy === s ? 'on' : ''}" data-sort="${s}">${l}</button>`).join('')}</div></div>
       <div class="hr head"><div>Звичка</div><div>Виконання за період</div><div>Тренд</div><div>Серія</div><div>Відміток</div><div></div></div>
       ${rows.map(o => `<div class="hr" data-expand="${o.h.id}">
-        <div class="hname"><div class="icon" style="background:${o.h.color}">${iconHTML(o.h.icon)}</div>${esc(o.h.name)}</div>
+        <div class="hname"><div class="icon" style="background:${o.h.color}">${iconHTML(o.h.icon)}</div>${esc(o.h.name)}${finished(o.h) ? `<span class="finlbl">🏁 ${short(o.h.end)}</span>` : ''}</div>
         <div class="rbar"><div class="bar"><i style="width:${o.r ?? 0}%;background:${o.h.color}"></i></div><b style="width:42px;text-align:right">${o.r === null ? '—' : Math.round(o.r)+'%'}</b></div>
         <div>${o.trend === null ? '<span class="hint">—</span>' : o.trend > 0 ? `<span class="up">▲ ${o.trend}%</span>` : o.trend < 0 ? `<span class="down">▼ ${-o.trend}%</span>` : '<span class="hint">= 0%</span>'}</div>
         <div>🔥 ${o.cur} &nbsp;🏆 ${o.best}</div>
@@ -1207,6 +1239,7 @@ function renderSettings(){
       ${DESKTOP ? '<button class="btn" data-act="openFolder">Відкрити папку з даними</button>' : ''}</div>
     </div>
     <div class="panel" id="syncPanel"><h3>☁ Синхронізація через Dropbox</h3>${syncPanelBody()}</div>
+    ${stepsPanel()}
     ${DESKTOP && DESKTOP.checkUpdate ? `<div class="panel"><h3>🔄 Оновлення</h3>
       <div class="cap">Встановлена версія <b>${esc(appVersion())}</b>. Оновлення ставиться поверх, усі звички й записи лишаються на місці.</div>
       <div class="row"><button class="btn primary" data-act="checkupd">Перевірити оновлення</button><button class="btn" data-act="pickupd">Встановити з файлу…</button></div>
@@ -1533,6 +1566,7 @@ async function syncNow(manual){
       break;
     }
     sync.last = Date.now(); sync.err = null; sync.status = 'ok';
+    stepsPull(false);
   } catch (e) {
     sync.status = 'err'; sync.err = e instanceof TypeError ? 'немає інтернету або Dropbox недоступний' : String(e.message || e);
     if (manual) toast('Синхронізація не вдалася: ' + sync.err);
@@ -1596,7 +1630,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.4'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.5'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1768,6 +1802,81 @@ document.addEventListener('keydown', e => {
   }
 });
 $('#modal').addEventListener('mousedown', e => { if (e.target.id === 'modal') closeModal(); });
+
+/* ---------- кроки з «Здоров'я» ----------
+   Команда на iPhone щодня о 23:00 кладе у папку програми в Dropbox файл steps.txt з рядком «2026-11-24 7234».
+   Програма читає його після кожної синхронізації й записує кроки у числову звичку. */
+const STEPS_FILE = '/steps.txt';
+let stepsInfo = null, stepsLast = 0;
+function stepsHabit(){
+  const id = state.settings.stepsHabit;
+  if (id === 'none') return null;
+  return state.habits.find(h => h.id === id && h.measure === 'number')
+    || activeHabits().find(h => h.measure === 'number' && /крок|step/i.test((h.unit || '') + ' ' + h.name)) || null;
+}
+function parseSteps(txt){
+  const out = [];
+  String(txt || '').split(/\r?\n/).forEach(line => {
+    let m = line.match(/(\d{4})-(\d{1,2})-(\d{1,2})/), k = null, rest = line;
+    if (m) k = `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+    else if ((m = line.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/))) k = `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+    if (!k) return;
+    rest = line.replace(m[0], ' ').trim().replace(/[.,]\d{1,2}(?!\d)\s*$/, '');
+    const v = parseInt(rest.replace(/[^\d]/g, ''), 10);
+    if (Number.isFinite(v) && v >= 0 && v < 1e6) out.push({k, v});
+  });
+  return out;
+}
+function applySteps(list){
+  const h = stepsHabit(); if (!h) return 0;
+  let n = 0; const t = todayKey();
+  list.forEach(({k, v}) => {
+    if (k > t || !inLife(h, k)) return;
+    const e = entry(k, h.id);
+    if (e && (e.src === 'h' ? +e.v === v : +e.v >= v)) return; // вручну введене більше значення не чіпаємо
+    (state.entries[k] = state.entries[k] || {})[h.id] = {v, t:Date.now(), src:'h'}; n++;
+  });
+  if (n) { save(); render(); }
+  return n;
+}
+async function stepsPull(force){
+  if (!sync.refresh || (!force && Date.now() - stepsLast < 60000)) return;
+  stepsLast = Date.now();
+  try {
+    const r = await xfetch('https://content.dropboxapi.com/2/files/download', {method:'POST', headers:{Authorization:'Bearer ' + await dbxToken(), 'Dropbox-API-Arg':JSON.stringify({path:STEPS_FILE})}});
+    if (r.status === 409) { stepsInfo = {none:true}; return; }
+    if (!r.ok) return;
+    const list = parseSteps(await r.text());
+    const last = list.slice().sort((a, b) => a.k.localeCompare(b.k)).pop() || null;
+    const n = applySteps(list);
+    stepsInfo = {last, at:Date.now()};
+    if (n && force) toast(`👟 Кроки оновлено: ${fmt(last.v)}`);
+  } catch (e) {}
+  finally { const b = $('#stepsBox'); if (b) b.outerHTML = stepsPanel(); }
+}
+function stepsPanel(){
+  if (!sync.refresh) return '';
+  const h = stepsHabit(), nums = state.habits.filter(x => x.measure === 'number' && !finished(x));
+  const st = !stepsInfo ? 'Ще не перевіряли' : stepsInfo.none ? 'Файл steps.txt ще не з\'явився в Dropbox. Налаштуй команду на iPhone (інструкція нижче).'
+    : stepsInfo.last ? `Останні дані: <b>${fullDate(stepsInfo.last.k)}</b> — <b>${fmt(stepsInfo.last.v)}</b> кроків` : 'Файл є, але в ньому не знайшлося дати й числа';
+  return `<div class="panel" id="stepsBox"><h3>👟 Кроки з «Здоров'я» (iPhone)</h3>
+    <div class="cap">Команда на iPhone щодня о 23:00 записує кроки у Dropbox, а програма ставить їх у звичку.</div>
+    <div class="row"><span>Записувати у звичку</span><select class="sel-in" id="stepsHabitSel"><option value="none" ${!h ? 'selected' : ''}>— не записувати —</option>${nums.map(x => `<option value="${x.id}" ${h && h.id === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
+      <button class="btn" data-act="stepspull">Перевірити зараз</button></div>
+    <div class="hint" style="margin:8px 0 0">${st}</div>
+    <details class="steps-how"><summary>Як налаштувати команду на iPhone (5 хв)</summary><ol>
+      <li>Встанови програму <b>Dropbox</b> на iPhone і увійди в той самий акаунт.</li>
+      <li>Відкрий <b>Команди</b> → вкладка <b>Автоматизація</b> → <b>+</b> → <b>Час доби</b> → <b>23:00</b>, <b>Щодня</b> → <b>Запускати негайно</b> → <b>Далі</b> → <b>Нова порожня автоматизація</b>.</li>
+      <li>Додай дію <b>Знайти зразки здоров'я</b>: тип <b>Кроки</b>, фільтр <b>Дата початку — сьогодні</b>.</li>
+      <li>Додай <b>Обчислити статистику</b> → <b>Сума</b> для «Зразки здоров'я».</li>
+      <li>Додай <b>Форматувати дату</b>: <b>Поточна дата</b>, формат <b>Свій</b> → <code>yyyy-MM-dd</code>.</li>
+      <li>Додай <b>Текст</b> і впиши в нього дві змінні через пробіл: <b>Форматована дата</b> і <b>Статистика</b>. Вийде щось на зразок <code>2026-11-24 7234</code>.</li>
+      <li>Додай <b>Зберегти файл</b>: вимкни «Питати, куди зберегти», вибери <b>Dropbox → Програми (Apps / Приложения) → MoiZvychky-sync-2026</b>, ім'я файла <code>steps.txt</code>, увімкни <b>Замінити, якщо файл існує</b>.</li>
+      <li>Натисни ▶ один раз, щоб перевірити й дозволити доступ до «Здоров'я» та Dropbox. Потім тут натисни «Перевірити зараз».</li>
+    </ol></details></div>`;
+}
+document.addEventListener('change', e => { if (e.target.id === 'stepsHabitSel') { state.settings.stepsHabit = e.target.value; save(); stepsPull(true); } });
+document.addEventListener('click', e => { if (e.target.closest('[data-act="stepspull"]')) { stepsInfo = stepsInfo || {}; stepsPull(true); } });
 
 /* ---------- Помодоро ---------- */
 const PDEF = {focus:25, short:5, long:15, every:4, autoBreak:true, autoFocus:false, sound:'bell', amb:'none', vol:70, mark:false};
