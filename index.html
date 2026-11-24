@@ -297,9 +297,11 @@
   .ptl i{position:absolute;top:0;bottom:0;background:#fb7185;border-radius:2px;min-width:2px}
   .ptl i.part{background:#fbbf24}
   .ptlx{display:flex;justify-content:space-between;color:var(--muted);font-size:10.5px;margin-top:4px}
-  .pweek{display:flex;gap:6px;align-items:flex-end;height:90px;margin-top:12px}
+  .pweek{display:flex;gap:6px;align-items:flex-end;height:100px;margin-top:12px}
   .pweek div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end;font-size:10.5px;color:var(--muted)}
   .pweek div b{width:100%;max-width:26px;background:#fb7185;border-radius:4px 4px 2px 2px;min-height:2px;opacity:.85}
+  .pweek div small{font-size:10px;opacity:.7;margin-top:-3px}
+  .pweek div.today{color:var(--text)}
   .pweek div.today b{opacity:1;box-shadow:0 0 0 2px rgba(251,113,133,.35)}
   .pset{display:grid;grid-template-columns:1fr auto;gap:8px 10px;align-items:center;font-size:12.5px;margin-top:10px}
   .pset input[type=number]{width:64px;background:#242633;border:1px solid var(--border);border-radius:6px;padding:4px 6px;text-align:center}
@@ -1594,7 +1596,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.3'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.4'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1978,7 +1980,7 @@ function renderPomo(){
   const segs = today.map(s => { const a = Math.max(0, (Math.max(s.s, from) - from) / span * 100), b = Math.min(100, (s.e - from) / span * 100); return `<i class="${s.p ? 'part' : ''}" style="left:${a}%;width:${Math.max(0.4, b - a)}%" title="${hm2(s.s)}–${hm2(s.e)} · ${s.m} хв"></i>`; }).join('');
   const mid = Math.round((firstH + 24) / 2);
   // тиждень
-  const week = []; for (let i = 6; i >= 0; i--) { const dd = new Date(); dd.setDate(dd.getDate() - i); const k = dkey(dd); week.push({k, l:dd.toLocaleDateString('uk-UA', {weekday:'short'}), m:psessions().filter(s => dayOf(s.e) === k).reduce((a, s) => a + s.m, 0)}); }
+  const week = []; for (let i = 6; i >= 0; i--) { const dd = new Date(); dd.setDate(dd.getDate() - i); const k = dkey(dd); week.push({k, l:dd.toLocaleDateString('uk-UA', {weekday:'short'}), n:dd.getDate(), m:psessions().filter(s => dayOf(s.e) === k).reduce((a, s) => a + s.m, 0)}); }
   const wmax = Math.max(25, ...week.map(w => w.m)), wsum = week.reduce((a, w) => a + w.m, 0);
   const every = Math.max(1, +c.every || 4), inCycle = prun.done % every || (prun.done && prun.mode !== 'focus' ? every : 0);
   $('#main').innerHTML = `
@@ -1998,7 +2000,7 @@ function renderPomo(){
           <div class="ptl">${segs}</div><div class="ptlx"><span>${String(firstH).padStart(2, '0')}:00</span><span>${mid}:00</span><span>24:00</span></div>
           <div class="plist">${today.length ? today.map(s => `<div class="it"><span class="tm">${hm2(s.s)}–${hm2(s.e)}</span><span class="nm">${hname(s.h)}${s.p ? ' <span style="color:#fbbf24">(перервано)</span>' : ''}</span><span class="mn">${s.m} хв</span></div>`).join('') : '<div class="pempty">Ще немає сесій. Натисни «Почати фокус» 🍅</div>'}</div></div>
         <div class="panel"><h3>За тиждень</h3><div class="cap" style="margin:4px 0 0">Разом ${wsum >= 60 ? Math.floor(wsum / 60) + ' год ' : ''}${wsum % 60} хв</div>
-          <div class="pweek">${week.map(w => `<div class="${w.k === t ? 'today' : ''}" title="${w.m} хв"><span>${w.m || ''}</span><b style="height:${Math.round(w.m / wmax * 60)}px"></b>${w.l}</div>`).join('')}</div></div>
+          <div class="pweek">${week.map(w => `<div class="${w.k === t ? 'today' : ''}" title="${w.m} хв"><span>${w.m || ''}</span><b style="height:${Math.round(w.m / wmax * 60)}px"></b>${w.l}<small>${w.n}</small></div>`).join('')}</div></div>
         <div class="panel"><h3>Налаштування таймера</h3>
           <div class="pset">
             <span>Фокус, хв</span><input type="number" min="1" max="180" data-pcfg="focus" value="${c.focus}">
