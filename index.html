@@ -1624,13 +1624,12 @@ function paintSync(){
   if (sp && !(sp.contains(document.activeElement) && document.activeElement.tagName === 'INPUT')) sp.innerHTML = '<h3>☁ Синхронізація через Dropbox</h3>' + syncPanelBody();
 }
 let lastAutoSync = 0;
-function autoSync(){ if (sync.refresh && Date.now() - lastAutoSync > 20000) { lastAutoSync = Date.now(); syncNow(false); } }
+function autoSync(){ if (sync.refresh && Date.now() - lastAutoSync > 60000) { lastAutoSync = Date.now(); syncNow(false); } }
 window.addEventListener('focus', autoSync);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoSync(); });
-setInterval(() => { if (document.visibilityState === 'visible') autoSync(); }, 5 * 60 * 1000);
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.5'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.7'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -2152,8 +2151,8 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.pcfg === 'vol') { state.settings.pomo = {...(state.settings.pomo || {}), vol:+e.target.value}; if (ambNode) ambNode.g.gain.value = 0.5 * pvol(); } });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') ptick(); });
 setInterval(ptick, 250);
-// поки таймер іде або відкрита вкладка — частіше звіряємось з іншим пристроєм
-setInterval(() => { if (document.visibilityState === 'visible' && (prun.status !== 'idle' || view === 'pomo') && sync.refresh && !syncBusy) syncNow(false); }, 15000);
+// поки таймер іде — раз на хвилину звіряємось з іншим пристроєм (пауза/стоп з телефона)
+setInterval(() => { if (document.visibilityState === 'visible' && prun.status === 'run' && sync.refresh && !syncBusy) syncNow(false); }, 60000);
 
 render();
 paintSideFoot();
