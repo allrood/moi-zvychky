@@ -315,6 +315,7 @@
   .pset input[type=number]{width:64px;background:#242633;border:1px solid var(--border);border-radius:6px;padding:4px 6px;text-align:center}
   .pset select{background:#242633;border:1px solid var(--border);border-radius:6px;padding:4px 6px;max-width:160px}
   .pset input[type=range]{width:120px;accent-color:#fb7185}
+  .ptopic{background:#191a23;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12.5px;user-select:all;word-break:break-all}
   .pset input[type=checkbox]{width:17px;height:17px;accent-color:#fb7185}
   @media (max-width:1050px){.pomo{grid-template-columns:1fr}}
   @media (max-width:700px){
@@ -1629,7 +1630,7 @@ window.addEventListener('focus', autoSync);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') autoSync(); });
 
 /* ---------- оновлення (лише десктоп) ---------- */
-const WEB_VERSION = '1.4.7'; // версія веб-сторінки (для iPhone); має збігатися з version.json
+const WEB_VERSION = '1.4.8'; // версія веб-сторінки (для iPhone); має збігатися з version.json
 const appVersion = () => (DESKTOP && DESKTOP.version ? DESKTOP.version() : WEB_VERSION);
 // Веб-версія: якщо на сервері новіша — чистимо кеш і перезавантажуємось (раз на версію)
 async function hardRefresh(v){
@@ -1877,6 +1878,67 @@ function stepsPanel(){
 document.addEventListener('change', e => { if (e.target.id === 'stepsHabitSel') { state.settings.stepsHabit = e.target.value; save(); stepsPull(true); } });
 document.addEventListener('click', e => { if (e.target.closest('[data-act="stepspull"]')) { stepsInfo = stepsInfo || {}; stepsPull(true); } });
 
+/* ---------- пуш на телефон через ntfy ----------
+   Веб-програма на заблокованому iPhone «спить», тому сповіщення планується заздалегідь на сервері ntfy.sh
+   (відкладена доставка), а приходить через програму ntfy з App Store — навіть на заблокований екран.
+   Пауза/стоп скасовують заплановане. Тема — випадковий секретний рядок, спільний для всіх пристроїв. */
+const NTFY = 'https://ntfy.sh';
+let pushSig = '';
+const pushPending = (() => { try { return JSON.parse(localStorage.getItem('habits-push-pending')) || {}; } catch (e) { return {}; } })(); // seq → коли має прийти
+const pushTopic = () => state.settings.pushTopic || '';
+async function ntfy(method, url, obj){
+  try { const r = await xfetch(url, {method, headers: obj ? {'Content-Type':'application/json'} : {}, body: obj ? JSON.stringify(obj) : undefined}); return r.ok; } catch (e) { return false; }
+}
+function pushPlan(){ // що має бути заплановано зараз: кінець поточного етапу і, якщо наступний стартує сам, — кінець наступного
+  if (prun.status !== 'run') return [];
+  const c = pcfg(), out = [{seq:'pomo', at:prun.endAt, mode:prun.mode}];
+  if (prun.mode === 'focus' && c.autoBreak) { const d = prun.done + 1, m = d % Math.max(1, +c.every || 4) === 0 ? 'long' : 'short'; out.push({seq:'pomo2', at:prun.endAt + pdur(m), mode:m}); }
+  else if (prun.mode !== 'focus' && c.autoFocus) out.push({seq:'pomo2', at:prun.endAt + pdur('focus'), mode:'focus'});
+  return out.filter(x => x.at - Date.now() > 10000);
+}
+function pushText(mode){
+  const h = prun.habit && state.habits.find(x => x.id === prun.habit);
+  return mode === 'focus' ? {title:'🍅 Помодоро завершено', message:h ? `«${h.name}» — час на перерву` : 'Час на перерву'} : {title:'☕ Перерва закінчилась', message:'Час повертатися до фокусу'};
+}
+async function pushSync(){
+  const topic = pushTopic(); if (!topic) return;
+  const plan = pushPlan(), sig = topic + '|' + plan.map(p => p.seq + p.at + p.mode).join(',');
+  if (sig === pushSig) return; pushSig = sig;
+  for (const seq of ['pomo', 'pomo2']) {
+    const p = plan.find(x => x.seq === seq);
+    if (p) { if (await ntfy('POST', NTFY + '/', {topic, ...pushText(p.mode), tags:[p.mode === 'focus' ? 'tomato' : 'coffee'], priority:4, delay:String(Math.round(p.at / 1000)), sequence_id:seq})) pushPending[seq] = p.at; }
+    else if (pushPending[seq] > Date.now()) { await ntfy('DELETE', `${NTFY}/${topic}/${seq}`); delete pushPending[seq]; } // вже доставлене не чіпаємо
+  }
+  try { localStorage.setItem('habits-push-pending', JSON.stringify(pushPending)); } catch (e) {}
+}
+async function pushTest(){
+  const topic = pushTopic(); if (!topic) return;
+  const ok = await ntfy('POST', NTFY + '/', {topic, title:'✅ Мої звички', message:'Тестове сповіщення. Якщо ти це бачиш — пуші працюють.', tags:['tada']});
+  toast(ok ? 'Тест надіслано — перевір телефон' : 'Не вдалося надіслати: немає зв\'язку з ntfy.sh');
+}
+function pushPanel(){
+  const t = pushTopic();
+  if (!t) return `<div class="panel"><h3>Сповіщення на телефон</h3><div class="cap">Щоб сигнал про кінець помодоро приходив навіть на заблокований iPhone.</div>
+    <button class="btn" data-pomo="pushon">Увімкнути</button></div>`;
+  return `<div class="panel"><h3>Сповіщення на телефон</h3>
+    <div class="cap">Увімкнено. Пуш приходить через безкоштовну програму <b>ntfy</b>, навіть коли телефон заблокований.</div>
+    <div class="row" style="gap:6px"><code class="ptopic">${esc(t)}</code><button class="btn" data-pomo="pushcopy">Копіювати</button></div>
+    <details class="steps-how"><summary>Як підключити телефон (1 хв)</summary><ol>
+      <li>Встанови з App Store програму <b>ntfy</b> і дозволь сповіщення.</li>
+      <li>Натисни <b>+</b> → <b>Topic name</b>: встав назву вище (сервер ntfy.sh за замовчуванням) → <b>Subscribe</b>.</li>
+      <li>Натисни «Надіслати тест» тут — на телефоні має з'явитися сповіщення.</li></ol>
+      <div style="margin-top:6px">Назва теми — як пароль: хто її знає, бачить сповіщення. Не публікуй її.</div></details>
+    <div class="row" style="margin-top:10px;gap:6px"><button class="btn" data-pomo="pushtest">Надіслати тест</button><button class="btn" data-pomo="pushoff">Вимкнути</button></div></div>`;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-pomo^="push"]'); if (!b) return;
+  const a = b.dataset.pomo;
+  if (a === 'pushon') { const r = crypto.getRandomValues(new Uint8Array(12)); state.settings.pushTopic = 'mz-' + Array.from(r, x => x.toString(36).padStart(2, '0')).join('').slice(0, 20); save(); pushSig = ''; pushSync(); render(); }
+  else if (a === 'pushoff') { const t = pushTopic(); for (const s of ['pomo', 'pomo2']) await ntfy('DELETE', `${NTFY}/${t}/${s}`); state.settings.pushTopic = ''; save(); pushSig = ''; render(); }
+  else if (a === 'pushtest') pushTest();
+  else if (a === 'pushcopy') { try { await navigator.clipboard.writeText(pushTopic()); toast('Скопійовано'); } catch (err) { toast(pushTopic()); } }
+});
+
 /* ---------- Помодоро ---------- */
 const PDEF = {focus:25, short:5, long:15, every:4, autoBreak:true, autoFocus:false, sound:'bell', amb:'none', vol:70, mark:false};
 const PRUN_KEY = 'habits-pomo-run'; // стан таймера — свій на кожному пристрої
@@ -1890,6 +1952,7 @@ function prunSave(t){
   prun.t = t || Date.now();
   try { localStorage.setItem(PRUN_KEY, JSON.stringify(prun)); } catch (e) {}
   state.timer = {...prun}; persist(); scheduleSync(t ? 2500 : 300);
+  pushSync();
 }
 function ptimerAdopt(){ // прийшов новіший стан таймера з іншого пристрою
   const r = state.timer; if (!r || !PMODES[r.mode] || (r.t || 0) <= (prun.t || 0)) return false;
@@ -2122,8 +2185,9 @@ function renderPomo(){
             <span>Фоновий звук під час фокусу</span><select data-pcfg="amb">${Object.entries(AMBS).map(([k, v]) => `<option value="${k}" ${c.amb === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
             <span>Гучність</span><input type="range" min="0" max="100" data-pcfg="vol" value="${c.vol}">
           </div>
-          ${DESKTOP ? '' : '<div class="hint" style="margin:10px 0 0">На iPhone таймер рахує й у фоні, але звук пролунає, лише коли програма відкрита на екрані.</div>'}
+          ${DESKTOP ? '' : `<div class="hint" style="margin:10px 0 0">На iPhone звук грає, лише коли програма відкрита. ${pushTopic() ? '' : 'Щоб сигнал приходив на заблокований екран, увімкни сповіщення на телефон нижче.'}</div>`}
         </div>
+        ${pushPanel()}
       </div>
     </div>`;
   $('#pHabit').addEventListener('change', e => { prun.habit = e.target.value; prunSave(); });
